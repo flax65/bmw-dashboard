@@ -1,7 +1,8 @@
+
 const CACHE = 'bmw-dash-v1';
 const ASSETS = [
     './index.html',
-    './manifest.json'
+    './Manifest.json'
 ];
 
 self.addEventListener('install', e => {
