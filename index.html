@@ -1,29 +1,5 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#111111">
-<title>BMW R1100S Diagnostica</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-.frame{width:100vw;max-width:800px;background:#fff;border-radius:6px;overflow:hidden;position:relative;cursor: pointer;}
-canvas{display:block;width:100%;aspect-ratio:800/360;}
-#st{position:absolute;bottom:4px;right:8px;font-size:11px;font-family:Arial;color:#ffa500;letter-spacing:1px;font-weight: bold;}
-.ok{color:#22c55e!important;}.err{color:#f87171!important;}
-</style>
-</head>
-<body>
-<div class="frame" id="appFrame">
-    <canvas id="c"></canvas>
-    <div id="st">TAP TO CONNECT</div>
-</div>
 
-<script>
+// ===== CONFIGURAZIONE =====
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const st = document.getElementById('st');
@@ -31,268 +7,85 @@ const appFrame = document.getElementById('appFrame');
 
 let data = { rpm: 0, spd: 0, iat: 0, clt: 0, lmd: 0, bat: 0, gear: '-', tot: 0, trip: 0 };
 const W = 800, H = 360;
-
-// Configurazione UUID BLE (devono coincidere con l'ESP32)
 const SERVICE_UUID = '5bc1a100-36e1-4b13-9bbf-8547cb834f11';
 const CHARACTERISTIC_UUID = '5bc1a101-36e1-4b13-9bbf-8547cb834f11';
 let bleDevice = null;
 
-// Funzione resize
-function resize() {
-    const r = canvas.getBoundingClientRect();
-    canvas.width = r.width * window.devicePixelRatio;
-    canvas.height = r.height * window.devicePixelRatio;
-    ctx.setTransform(canvas.width/W, 0, 0, canvas.height/H, 0, 0);
-    draw();
-}
-window.addEventListener('resize', resize);
+// (inserisci qui TUTTE le funzioni di disegno: resize, fp, dd, dot, dn, tw, lb, un, draw)
+// ... mantieni le funzioni di disegno esattamente come prima ...
 
-// Seven-segment display definition
-const SEGS = {
-    '0': [1,1,1,1,1,1,0], '1': [0,1,1,0,0,0,0], '2': [1,1,0,1,1,0,1],
-    '3': [1,1,1,1,0,0,1], '4': [0,1,1,0,0,1,1], '5': [1,0,1,1,0,1,1],
-    '6': [1,0,1,1,1,1,1], '7': [1,1,1,0,0,0,0], '8': [1,1,1,1,1,1,1],
-    '9': [1,1,1,1,0,1,1], ' ': [0,0,0,0,0,0,0], '-': [0,0,0,0,0,0,1]
-};
-
-function fp(pts) {
-    ctx.beginPath();
-    ctx.moveTo(pts[0], pts[1]);
-    for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i+1]);
-    ctx.closePath();
-    ctx.fill();
-}
-
-function dd(x, y, w, h, ch, sw, col) {
-    const seg = SEGS[ch] || SEGS[' '];
-    const p = sw * 0.45;
-    ctx.fillStyle = col || '#111';
-    if (seg[0]) fp([x+p, y, x+w-p, y, x+w-p-sw, y+sw, x+p+sw, y+sw]);
-    if (seg[1]) fp([x+w, y+p, x+w, y+h/2-p, x+w-sw, y+h/2-p-sw*0.3, x+w-sw, y+p+sw]);
-    if (seg[2]) fp([x+w, y+h/2+p, x+w, y+h-p, x+w-sw, y+h-p-sw, x+w-sw, y+h/2+p+sw*0.3]);
-    if (seg[3]) fp([x+p, y+h, x+w-p, y+h, x+w-p-sw, y+h-sw, x+p+sw, y+h-sw]);
-    if (seg[4]) fp([x, y+h/2+p, x, y+h-p, x+sw, y+h-p-sw, x+sw, y+h/2+p+sw*0.3]);
-    if (seg[5]) fp([x, y+p, x, y+h/2-p, x+sw, y+h/2-p-sw*0.3, x+sw, y+p+sw]);
-    if (seg[6]) fp([x+p+sw*0.3, y+h/2, x+p+sw, y+h/2-sw*0.45, x+w-p-sw, y+h/2-sw*0.45, x+w-p-sw*0.3, y+h/2, x+w-p-sw, y+h/2+sw*0.45, x+p+sw, y+h/2+sw*0.45]);
-}
-
-function dot(x, y, r, col) {
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = col || '#111';
-    ctx.fill();
-}
-
-function dn(str, x, y, dw, dh, sw, gap, col) {
-    let cx = x;
-    for (let i = 0; i < str.length; i++) {
-        const ch = str[i];
-        if (ch === '.') {
-            dot(cx + sw * 0.5, y + dh + sw * 0.15, sw * 0.45, col);
-            cx += sw * 1.2;
-        } else {
-            if (ch !== ' ') dd(cx, y, dw, dh, ch, sw, col);
-            cx += dw + gap;
-        }
-    }
-}
-
-function tw(str, dw, sw, gap) {
-    let w = 0;
-    for (let i = 0; i < str.length; i++) w += str[i] === '.' ? sw * 1.2 : dw + gap;
-    return w - gap;
-}
-
-function lb(txt, x, y, sz, col, sp) {
-    ctx.fillStyle = col || '#999';
-    ctx.font = `600 ${sz || 9}px Arial`;
-    ctx.letterSpacing = (sp || '2') + 'px';
-    ctx.fillText(txt, x, y);
-}
-
-function un(txt, x, y) {
-    ctx.fillStyle = '#777';
-    ctx.font = '400 11px Arial';
-    ctx.letterSpacing = '0px';
-    ctx.fillText(txt, x, y);
-}
-
-function draw() {
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, W, H);
-    const SP = H * 0.60, HL = W * 0.5;
-    ctx.fillStyle = '#eee';
-    ctx.fillRect(0, SP, W, 0.5);
-    ctx.fillRect(HL, 0, 0.5, SP);
-    for (let i = 1; i < 4; i++) ctx.fillRect(W * i / 5, SP, 0.5, H - SP);
-    ctx.fillRect(W * 4 / 5, SP, 0.5, H - SP);
-    
-    // RPM
-    const DWB = 58, DHB = 106, SWB = 11, GB = 10;
-    const rs = String(data.rpm);
-    const rw = tw(rs, DWB, SWB, GB);
-    const rx = (HL - rw) / 2;
-    const ry = (SP - DHB) / 2;
-    dn(rs, rx, ry, DWB, DHB, SWB, GB);
-    lb('RPM', rx, ry - 8, 11, '#888', '4');
-    
-    // SPEED
-    const ss = String(Math.round(data.spd));
-    const sw2 = tw(ss, DWB, SWB, GB);
-    const sx = HL + (HL - sw2) / 2 - 24;
-    const sy = ry;
-    dn(ss, sx, sy, DWB, DHB, SWB, GB);
-    un('km/h', sx + sw2 + 12, sy + DHB);
-    lb('SPEED', sx, sy - 8, 11, '#888', '4');
-    
-    // TOT TRIP
-    const DWK = 12, DHK = 22, SWK = 2.6, GK = 2;
-    const ty = sy + DHB + 18;
-    ctx.fillStyle = '#eee';
-    ctx.fillRect(HL + 8, ty - 6, HL - 16, 0.5);
-    const ts = Number(data.tot).toFixed(1);
-    const tw2 = tw(ts, DWK, SWK, GK);
-    const tx = HL + 12;
-    dn(ts, tx, ty, DWK, DHK, SWK, GK);
-    ctx.fillStyle = '#888';
-    ctx.font = '400 9px Arial';
-    ctx.letterSpacing = '0px';
-    ctx.fillText('km', tx + tw2 + 4, ty + DHK - 1);
-    lb('TOT', tx, ty - 4, 7, '#999', '1.5');
-    
-    const tr = Number(data.trip).toFixed(1);
-    const trw = tw(tr, DWK, SWK, GK);
-    const trx = HL + HL / 2 + 4;
-    dn(tr, trx, ty, DWK, DHK, SWK, GK);
-    ctx.fillStyle = '#888';
-    ctx.font = '400 9px Arial';
-    ctx.letterSpacing = '0px';
-    ctx.fillText('km', trx + trw + 4, ty + DHK - 1);
-    lb('TRIP', trx, ty - 4, 7, '#999', '1.5');
-    ctx.fillStyle = '#eee';
-    ctx.fillRect(HL + HL / 2 - 2, ty, 0.5, DHK + 10);
-    
-    // PARAMETRI
-    const DWS = 19, DHS = 40, SWS = 4, GS = 3;
-    const BY = SP + (H - SP - DHS) / 2;
-    const params = [
-        { l: 'IAT', v: Number(data.iat).toFixed(1), u: '°C' },
-        { l: 'CLT', v: Number(data.clt).toFixed(1), u: '°C' },
-        { l: 'LMD', v: String(Math.round(data.lmd)), u: 'mV' },
-        { l: 'BAT', v: Number(data.bat).toFixed(2), u: 'V' }
-    ];
-    params.forEach(({ l, v, u }, c) => {
-        const cw = W / 5;
-        const cx = c * cw;
-        const vw = tw(v, DWS, SWS, GS);
-        const bx = cx + (cw - vw) / 2 - 8;
-        dn(v, bx, BY, DWS, DHS, SWS, GS);
-        ctx.fillStyle = '#777';
-        ctx.font = '400 11px Arial';
-        ctx.letterSpacing = '0px';
-        ctx.fillText(u, bx + vw + 5, BY + DHS);
-        ctx.fillStyle = '#999';
-        ctx.font = '600 9px Arial';
-        ctx.letterSpacing = '2px';
-        ctx.fillText(l, bx, BY - 9);
-    });
-    
-    // GEAR
-    const DWG = 32, DHG = 54, SWG = 7;
-    const gcx = W * 4 / 5;
-    const gcw = W / 5;
-    const gs = String(data.gear);
-    const gw = tw(gs, DWG, SWG, 0);
-    const gx = gcx + (gcw - gw) / 2;
-    const gy = SP + (H - SP - DHG) / 2;
-    dn(gs, gx, gy, DWG, DHG, SWG, 0);
-    ctx.fillStyle = '#999';
-    ctx.font = '600 9px Arial';
-    ctx.letterSpacing = '2px';
-    ctx.fillText('GEAR', gx, gy - 9);
-}
-
-// ========== WEB BLUETOOTH CONNECTION ==========
+// ===== WEB BLUETOOTH =====
 async function connectBLE() {
     if (!navigator.bluetooth) {
         st.textContent = 'NOT SUPPORTED';
         st.className = 'err';
-        console.error('Web Bluetooth non supportato dal browser');
         return;
     }
     
     try {
         st.textContent = 'SCANNING...';
         st.className = '';
-        console.log('🔍 Richiesta dispositivo BLE...');
         
         bleDevice = await navigator.bluetooth.requestDevice({
             filters: [{ name: 'BMW_R1100S_Dashboard' }],
             optionalServices: [SERVICE_UUID]
         });
         
-        console.log('✅ Dispositivo trovato:', bleDevice.name);
         st.textContent = 'CONNECTING...';
         
         const server = await bleDevice.gatt.connect();
-        console.log('✅ GATT connesso');
-        
         const service = await server.getPrimaryService(SERVICE_UUID);
-        console.log('✅ Servizio trovato');
-        
         const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
-        console.log('✅ Caratteristica trovata');
         
         await characteristic.startNotifications();
-        console.log('✅ Notifiche attivate');
         
         characteristic.addEventListener('characteristicvaluechanged', (event) => {
-            const decoder = new TextDecoder('utf-8');
-            const jsonString = decoder.decode(event.target.value);
-            console.log('📊 Dato:', jsonString);
+            const jsonString = new TextDecoder().decode(event.target.value);
             try {
-                const parsed = JSON.parse(jsonString);
-                Object.assign(data, parsed);
+                Object.assign(data, JSON.parse(jsonString));
                 draw();
                 st.textContent = 'LIVE';
                 st.className = 'ok';
-            } catch (e) {
-                console.error('JSON parse error:', e);
-            }
+            } catch(e) { console.error(e); }
         });
         
         bleDevice.addEventListener('gattserverdisconnected', () => {
-            console.log('🔌 Disconnesso');
             st.textContent = 'TAP TO CONNECT';
             st.className = 'err';
+            bleDevice = null;
         });
         
     } catch (error) {
-        console.error('❌ Errore BLE:', error);
+        console.error(error);
         st.textContent = 'TAP TO CONNECT';
         st.className = 'err';
     }
 }
 
-function initApp() {
+// ===== GESTORE CLICK =====
+appFrame.addEventListener('click', () => {
     // Fullscreen
-    const el = document.documentElement;
-    if (el.requestFullscreen) el.requestFullscreen();
-    if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {});
-    }
+    document.documentElement.requestFullscreen?.();
+    screen.orientation?.lock('landscape').catch(() => {});
     
-    // Avvia connessione se non già connessa
-    if (!bleDevice || !bleDevice.gatt.connected) {
+    // Connessione solo se necessaria
+    if (!bleDevice?.gatt?.connected) {
         connectBLE();
     }
-}
+});
 
-// Event listener per il tap
-appFrame.addEventListener('click', initApp);
-
-// Resize e draw iniziale
-setTimeout(resize, 100);
-</script>
-</body>
-</html>
+// ===== INIT =====
+window.addEventListener('resize', () => {
+    const r = canvas.getBoundingClientRect();
+    canvas.width = r.width * devicePixelRatio;
+    canvas.height = r.height * devicePixelRatio;
+    ctx.setTransform(canvas.width/W, 0, 0, canvas.height/H, 0, 0);
+    draw();
+});
+setTimeout(() => {
+    const r = canvas.getBoundingClientRect();
+    canvas.width = r.width * devicePixelRatio;
+    canvas.height = r.height * devicePixelRatio;
+    ctx.setTransform(canvas.width/W, 0, 0, canvas.height/H, 0, 0);
+    draw();
+}, 100);
