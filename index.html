@@ -299,13 +299,17 @@ function draw() {
 }
 
 function resizeAndDraw() {
-    const r = canvas.getBoundingClientRect();
-    canvas.width  = r.width  * devicePixelRatio;
-    canvas.height = r.height * devicePixelRatio;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.width  = w * devicePixelRatio;
+    canvas.height = h * devicePixelRatio;
     ctx.setTransform(canvas.width/W, 0, 0, canvas.height/H, 0, 0);
     draw();
 }
 window.addEventListener('resize', resizeAndDraw);
+window.addEventListener('orientationchange', () => setTimeout(resizeAndDraw, 200));
 
 // ═══════════════════════════════════════════════
 //  BLE – CONNECTION
@@ -414,7 +418,10 @@ async function tryKnownDevice() {
 //  AUTO-CONNECT ON LOAD (no gesture needed for known device)
 // ═══════════════════════════════════════════════
 window.addEventListener('load', async () => {
+    resizeAndDraw();
     setTimeout(resizeAndDraw, 100);
+    setTimeout(resizeAndDraw, 300);
+    setTimeout(resizeAndDraw, 800);
 
     const device = await tryKnownDevice();
     if (device) {
