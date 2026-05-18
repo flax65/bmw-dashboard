@@ -82,9 +82,10 @@ async function connectBLE() {
         st.textContent = 'CONNECTING...';
         st.className = '';
 
-        // Richiede l'accesso all'hardware Bluetooth accoppiando il Service UUID
+        // Modifica del filtro: ricerca mirata per nome dispositivo e UUID opzionale
         bleDevice = await navigator.bluetooth.requestDevice({
-            filters: [{ services: [SERVICE_UUID] }]
+            filters: [{ name: 'BMW_R1100S_Dashboard' }],
+            optionalServices: [SERVICE_UUID]
         });
 
         const server = await bleDevice.gatt.connect();
