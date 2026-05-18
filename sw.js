@@ -1,4 +1,4 @@
-const CACHE = 'bmw-dash-v1';
+const CACHE = 'bmw-dash-v2';
 const ASSETS = [
     './index.html',
     './Manifest.json',
