@@ -1,5 +1,5 @@
+// ===== SOSTITUISCI TUTTO LO SCRIPT CON QUESTO =====
 
-// ===== CONFIGURAZIONE =====
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const st = document.getElementById('st');
@@ -11,12 +11,29 @@ const SERVICE_UUID = '5bc1a100-36e1-4b13-9bbf-8547cb834f11';
 const CHARACTERISTIC_UUID = '5bc1a101-36e1-4b13-9bbf-8547cb834f11';
 let bleDevice = null;
 
-// (inserisci qui TUTTE le funzioni di disegno: resize, fp, dd, dot, dn, tw, lb, un, draw)
-// ... mantieni le funzioni di disegno esattamente come prima ...
+// ===== FUNZIONI DI DISEGNO (mantieni quelle che avevi prima) =====
+// ... inserisci qui tutte le funzioni di disegno (resize, fp, dd, dot, dn, tw, lb, un, draw) ...
+// NON MODIFICARLE, sono corrette
 
-// ===== WEB BLUETOOTH =====
-async function connectBLE() {
+// ===== GESTORE CLICK DIRETTO - TUTTO QUI DENTRO =====
+appFrame.addEventListener('click', async (event) => {
+    console.log('👆 CLICK RILEVATO');
+    
+    // Fullscreen
+    document.documentElement.requestFullscreen?.();
+    screen.orientation?.lock('landscape').catch(() => {});
+    
+    // Se già connesso, esci
+    if (bleDevice?.gatt?.connected) {
+        console.log('Già connesso');
+        st.textContent = 'LIVE';
+        st.className = 'ok';
+        return;
+    }
+    
+    // Verifica supporto
     if (!navigator.bluetooth) {
+        console.error('Web Bluetooth non supportato');
         st.textContent = 'NOT SUPPORTED';
         st.className = 'err';
         return;
@@ -25,67 +42,65 @@ async function connectBLE() {
     try {
         st.textContent = 'SCANNING...';
         st.className = '';
+        console.log('🔍 requestDevice...');
         
+        // requestDevice DEVE essere chiamato direttamente qui
         bleDevice = await navigator.bluetooth.requestDevice({
             filters: [{ name: 'BMW_R1100S_Dashboard' }],
             optionalServices: [SERVICE_UUID]
         });
         
+        console.log('✅ Trovato:', bleDevice.name);
         st.textContent = 'CONNECTING...';
         
         const server = await bleDevice.gatt.connect();
+        console.log('✅ GATT connesso');
+        
         const service = await server.getPrimaryService(SERVICE_UUID);
+        console.log('✅ Servizio trovato');
+        
         const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+        console.log('✅ Caratteristica trovata');
         
         await characteristic.startNotifications();
+        console.log('✅ Notifiche attivate');
         
         characteristic.addEventListener('characteristicvaluechanged', (event) => {
-            const jsonString = new TextDecoder().decode(event.target.value);
+            const decoder = new TextDecoder('utf-8');
+            const jsonString = decoder.decode(event.target.value);
+            console.log('📊 Ricevuto:', jsonString);
             try {
-                Object.assign(data, JSON.parse(jsonString));
+                const parsed = JSON.parse(jsonString);
+                Object.assign(data, parsed);
                 draw();
                 st.textContent = 'LIVE';
                 st.className = 'ok';
-            } catch(e) { console.error(e); }
+            } catch(e) {
+                console.error('JSON error:', e);
+            }
         });
         
         bleDevice.addEventListener('gattserverdisconnected', () => {
+            console.log('🔌 Disconnesso');
             st.textContent = 'TAP TO CONNECT';
             st.className = 'err';
             bleDevice = null;
         });
         
     } catch (error) {
-        console.error(error);
+        console.error('❌ Errore:', error.name, error.message);
         st.textContent = 'TAP TO CONNECT';
         st.className = 'err';
     }
+});
+
+// ===== INIT DISEGNO =====
+function resizeAndDraw() {
+    const r = canvas.getBoundingClientRect();
+    canvas.width = r.width * devicePixelRatio;
+    canvas.height = r.height * devicePixelRatio;
+    ctx.setTransform(canvas.width/W, 0, 0, canvas.height/H, 0, 0);
+    draw();
 }
-
-// ===== GESTORE CLICK =====
-appFrame.addEventListener('click', () => {
-    // Fullscreen
-    document.documentElement.requestFullscreen?.();
-    screen.orientation?.lock('landscape').catch(() => {});
-    
-    // Connessione solo se necessaria
-    if (!bleDevice?.gatt?.connected) {
-        connectBLE();
-    }
-});
-
-// ===== INIT =====
-window.addEventListener('resize', () => {
-    const r = canvas.getBoundingClientRect();
-    canvas.width = r.width * devicePixelRatio;
-    canvas.height = r.height * devicePixelRatio;
-    ctx.setTransform(canvas.width/W, 0, 0, canvas.height/H, 0, 0);
-    draw();
-});
-setTimeout(() => {
-    const r = canvas.getBoundingClientRect();
-    canvas.width = r.width * devicePixelRatio;
-    canvas.height = r.height * devicePixelRatio;
-    ctx.setTransform(canvas.width/W, 0, 0, canvas.height/H, 0, 0);
-    draw();
-}, 100);
+window.addEventListener('resize', resizeAndDraw);
+setTimeout(resizeAndDraw, 100);
