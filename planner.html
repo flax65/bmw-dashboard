@@ -88,13 +88,14 @@ html, body {
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* INPUTS */
 #inputArea {
     padding: 14px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
 }
 
 .field {
@@ -251,7 +252,7 @@ html, body {
 }
 
 /* ── WAYPOINTS ── */
-#waypointsArea { overflow-y: auto; max-height: 160px; }
+#waypointsArea { flex-shrink: 0; }
 #btnAddWp {
     width: 100%; padding: 7px;
     background: transparent;
