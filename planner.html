@@ -288,6 +288,25 @@ html, body {
     transition: all 0.2s;
 }
 .wp-del:hover { background: var(--err); color: #000; border-color: var(--err); }
+.wp-move {
+    display: flex; flex-direction: column; gap: 2px; flex-shrink: 0;
+}
+.wp-move button {
+    background: var(--input-bg); border: 1px solid var(--border);
+    color: var(--muted); width: 28px; height: 13px;
+    border-radius: 3px; cursor: pointer; font-size: 8px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; padding: 0;
+}
+.wp-move button:hover { border-color: var(--accent); color: var(--accent); }
+.wp-move button:disabled { opacity: 0.2; cursor: not-allowed; }
+.wp-drag {
+    cursor: grab; color: var(--muted); font-size: 14px;
+    flex-shrink: 0; padding: 0 2px; user-select: none;
+}
+.wp-drag:active { cursor: grabbing; }
+.wp-row.drag-over { border-top: 2px solid var(--accent); }
+.wp-row.dragging { opacity: 0.4; }
 .wp-sug {
     position: absolute; top: 32px; left: 26px; right: 34px;
     background: var(--input-bg); border: 1px solid var(--border);
@@ -935,15 +954,23 @@ function addWaypointRow() {
     const row = document.createElement('div');
     row.className = 'wp-row';
     row.dataset.wpid = id;
+    row.draggable = true;
     row.innerHTML = `
+        <span class="wp-drag" title="Trascina per riordinare">⠿</span>
         <div class="wp-num">${idx + 1}</div>
         <input class="wp-inp" type="text" placeholder="Tappa ${idx + 1}..." autocomplete="off">
         <div class="wp-sug"></div>
+        <div class="wp-move">
+            <button class="wp-up" title="Sposta su">▲</button>
+            <button class="wp-dn" title="Sposta giù">▼</button>
+        </div>
         <button class="wp-del" title="Rimuovi">✕</button>`;
 
     const inp = row.querySelector('.wp-inp');
     const sug = row.querySelector('.wp-sug');
     const del = row.querySelector('.wp-del');
+    const btnUp = row.querySelector('.wp-up');
+    const btnDn = row.querySelector('.wp-dn');
 
     // Autocomplete
     let timer;
@@ -983,9 +1010,57 @@ function addWaypointRow() {
         waypoints = waypoints.filter(w => w.id !== id);
         row.remove();
         renumberWaypoints();
+        if (routeData) recalcRoute();
+    });
+
+    // Move up
+    btnUp.addEventListener('click', () => {
+        const prev = row.previousElementSibling;
+        if (prev) {
+            row.parentNode.insertBefore(row, prev);
+            syncWaypointsFromDOM();
+            if (routeData) recalcRoute();
+        }
+    });
+
+    // Move down
+    btnDn.addEventListener('click', () => {
+        const next = row.nextElementSibling;
+        if (next) {
+            row.parentNode.insertBefore(next, row);
+            syncWaypointsFromDOM();
+            if (routeData) recalcRoute();
+        }
+    });
+
+    // Drag & drop
+    row.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', id.toString());
+        row.classList.add('dragging');
+    });
+    row.addEventListener('dragend', () => {
+        row.classList.remove('dragging');
+        document.querySelectorAll('.wp-row').forEach(r => r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover', e => {
+        e.preventDefault();
+        document.querySelectorAll('.wp-row').forEach(r => r.classList.remove('drag-over'));
+        row.classList.add('drag-over');
+    });
+    row.addEventListener('drop', e => {
+        e.preventDefault();
+        const dragId = parseInt(e.dataTransfer.getData('text/plain'));
+        const dragRow = document.querySelector(`.wp-row[data-wpid="${dragId}"]`);
+        if (dragRow && dragRow !== row) {
+            row.parentNode.insertBefore(dragRow, row);
+            syncWaypointsFromDOM();
+            if (routeData) recalcRoute();
+        }
+        document.querySelectorAll('.wp-row').forEach(r => r.classList.remove('drag-over'));
     });
 
     document.getElementById('wpList').appendChild(row);
+    updateMoveButtons();
 }
 
 function renumberWaypoints() {
@@ -993,6 +1068,49 @@ function renumberWaypoints() {
         row.querySelector('.wp-num').textContent = i + 1;
         row.querySelector('.wp-inp').placeholder = `Tappa ${i + 1}...`;
     });
+    updateMoveButtons();
+}
+
+function updateMoveButtons() {
+    const rows = document.querySelectorAll('.wp-row');
+    rows.forEach((row, i) => {
+        const up = row.querySelector('.wp-up');
+        const dn = row.querySelector('.wp-dn');
+        if (up) up.disabled = (i === 0);
+        if (dn) dn.disabled = (i === rows.length - 1);
+    });
+}
+
+// Sync waypoints array order from DOM order after drag/move
+function syncWaypointsFromDOM() {
+    const rows = document.querySelectorAll('.wp-row');
+    const newOrder = [];
+    rows.forEach(row => {
+        const wpid = parseInt(row.dataset.wpid);
+        const wp = waypoints.find(w => w.id === wpid);
+        if (wp) newOrder.push(wp);
+    });
+    waypoints = newOrder;
+    renumberWaypoints();
+}
+
+// Recalc route after waypoint reorder
+async function recalcRoute() {
+    if (!fromCoords || !toCoords) return;
+    showStatus('Ricalcolo percorso...', '');
+    try {
+        const allPoints = [fromCoords, ...waypoints.map(w => w.coords).filter(Boolean), toCoords];
+        const coordStr  = allPoints.map(p => `${p.lng},${p.lat}`).join(';');
+        const url = `https://router.project-osrm.org/route/v1/driving/${coordStr}`
+            + `?steps=true&geometries=geojson&overview=full&annotations=false`;
+        const res  = await fetch(url);
+        const json = await res.json();
+        if (json.code === 'Ok' && json.routes.length) {
+            routeData = json.routes[0];
+            renderRoute(routeData);
+            hideStatus();
+        }
+    } catch(e) { showStatus('Errore ricalcolo', 'err'); }
 }
 
 // ═══════════════════════════════════════════════
