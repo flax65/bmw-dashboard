@@ -645,6 +645,17 @@ async function geocode(query) {
     return await res.json();
 }
 
+async function reverseGeocode(lat, lng) {
+    try {
+        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'it' } });
+        const j   = await res.json();
+        return j.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    } catch(e) {
+        return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    }
+}
+
 function setupAutocomplete(inputEl, sugEl, onSelect) {
     inputEl.addEventListener('input', () => {
         clearTimeout(geocodeTimers[inputEl.id]);
@@ -701,13 +712,33 @@ document.getElementById('btnGpsFrom').addEventListener('click', () => {
     }, () => showStatus('GPS non disponibile', 'err'));
 });
 
+function makeDraggableMarker(lat, lng, color, onDragEnd) {
+    const m = L.marker([lat, lng], {
+        icon: makeIcon(color),
+        draggable: true
+    }).addTo(map);
+    m.on('dragend', async () => {
+        const pos   = m.getLatLng();
+        const label = await reverseGeocode(pos.lat, pos.lng);
+        onDragEnd({ lat: pos.lat, lng: pos.lng, label });
+        if (routeData) recalcRoute();
+    });
+    return m;
+}
+
 function updateMarker(type, coords) {
     if (type === 'from') {
         if (markerFrom) markerFrom.remove();
-        markerFrom = L.marker([coords.lat, coords.lng], { icon: makeIcon('#22c55e') }).addTo(map);
+        markerFrom = makeDraggableMarker(coords.lat, coords.lng, '#22c55e', c => {
+            fromCoords = c;
+            document.getElementById('inpFrom').value = c.label;
+        });
     } else {
         if (markerTo) markerTo.remove();
-        markerTo = L.marker([coords.lat, coords.lng], { icon: makeIcon('#f87171') }).addTo(map);
+        markerTo = makeDraggableMarker(coords.lat, coords.lng, '#f87171', c => {
+            toCoords = c;
+            document.getElementById('inpTo').value = c.label;
+        });
     }
     if (fromCoords && toCoords) {
         map.fitBounds([[fromCoords.lat, fromCoords.lng], [toCoords.lat, toCoords.lng]], { padding: [40, 40] });
@@ -767,12 +798,27 @@ function renderRoute(route) {
     map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
     // Draw numbered waypoint markers on map
     waypoints.forEach((wp, i) => {
+        if (!wp.coords) return;
+        const wpId = wp.id;
         const icon = L.divIcon({
             className: '',
-            html: `<div style="width:20px;height:20px;background:#ffa500;color:#000;border-radius:50%;border:2px solid #fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">${i+1}</div>`,
-            iconSize: [20,20], iconAnchor: [10,10]
+            html: `<div style="width:22px;height:22px;background:#ffa500;color:#000;border-radius:50%;border:2px solid #fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:grab;">${i+1}</div>`,
+            iconSize: [22,22], iconAnchor: [11,11]
         });
-        wpMarkers.push(L.marker([wp.coords.lat, wp.coords.lng], { icon }).addTo(map));
+        const m = L.marker([wp.coords.lat, wp.coords.lng], { icon, draggable: true }).addTo(map);
+        m.on('dragend', async () => {
+            const pos   = m.getLatLng();
+            const label = await reverseGeocode(pos.lat, pos.lng);
+            const target = waypoints.find(w => w.id === wpId);
+            if (target) {
+                target.coords = { lat: pos.lat, lng: pos.lng, label };
+                // Update input field in sidebar
+                const row = document.querySelector(`.wp-row[data-wpid="${wpId}"]`);
+                if (row) row.querySelector('.wp-inp').value = label;
+            }
+            if (routeData) recalcRoute();
+        });
+        wpMarkers.push(m);
     });
 
     // Distance & duration
