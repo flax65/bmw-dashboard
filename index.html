@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BMW R1100S Dashboard</title>
     <style>
+        :root {
+            --bg-color: #000000;       /* Sfondo nero assoluto anti-riflesso */
+            --card-bg: #000000;        /* Card nere per non creare stacchi luminosi */
+            --text-main: #CCFF00;      /* Giallo fluo per i dati principali (giri, velocità, marcia) */
+            --text-muted: #FFFFFF;     /* Bianco puro per le etichette e i dati secondari */
+            --border-color: #FFFFFF;   /* Bordi bianchi sottili per separare i blocchi */
+            --accent-color: #CCFF00;   /* Dettagli in giallo fluo */
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -12,9 +21,9 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #000000; /* Nero assoluto per annullare i riflessi */
-            color: #FFFFFF; /* Bianco puro per la massima leggibilità dei testi standard */
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-muted);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -27,14 +36,14 @@
         .dashboard-container {
             width: 100%;
             max-width: 800px;
-            background-color: #000000;
-            border: 3px solid #CCFF00; /* Bordo giallo fluo ad alta visibilità */
+            background-color: var(--bg-color);
+            border: 3px solid var(--accent-color);
             border-radius: 16px;
             padding: 20px;
             position: relative;
+            box-shadow: none;
         }
 
-        /* Stato connessione */
         #status-container {
             position: absolute;
             top: 15px;
@@ -42,32 +51,32 @@
             font-size: 1.2rem;
             font-weight: bold;
         }
-        .connected { color: #00FF00; } /* Verde per stato OK */
+
+        .connected { color: #00FF00; }    /* Verde per stato OK */
         .disconnected { color: #FF0000; } /* Rosso per allarme/disconnesso */
 
-        /* Titolo e info di servizio */
         h1 {
-            font-size: 1.5rem;
-            color: #CCFF00; /* Giallo fluo */
+            font-size: 1.6rem;
+            color: var(--accent-color);
             margin-bottom: 20px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-weight: 800;
         }
 
-        /* Layout delle Pagine */
         .page {
             display: none;
             grid-template-columns: repeat(2, 1fr);
             gap: 20px;
         }
+
         .page.active {
             display: grid;
         }
 
-        /* Card dei Dati */
         .card {
-            background-color: #000000;
-            border: 2px solid #FFFFFF; /* Contorno bianco per staccare i blocchi */
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
             border-radius: 12px;
             padding: 15px;
             display: flex;
@@ -77,58 +86,37 @@
             min-height: 140px;
         }
 
-        /* Card a tutta larghezza (Giri e Giri/Velocità a seconda della pagina) */
         .card-full {
             grid-column: span 2;
             min-height: 160px;
-            border-color: #CCFF00; /* Evidenziazione per i dati primari di guida */
+            border-color: var(--accent-color);
         }
 
         .card-label {
             font-size: 1.2rem;
-            font-weight: 900;
+            font-weight: 800;
             text-transform: uppercase;
-            color: #FFFFFF; /* Testo etichetta bianco */
+            color: var(--text-muted);
             margin-bottom: 5px;
             letter-spacing: 1px;
         }
 
         .card-value {
-            font-size: 3.5rem;
+            font-size: 3.8rem;
             font-weight: 900;
             font-variant-numeric: tabular-nums;
-            color: #CCFF00; /* Giallo ambra/fluo per i dati numerici principali (massimo contrasto) */
+            color: var(--text-main);
             line-height: 1;
         }
 
-        /* Elementi critici (Marcia e Giri alti) */
         .gear-value {
-            font-size: 6rem; /* Dimensione massimizzata per la marcia inserita */
-            color: #CCFF00;
+            font-size: 6.5rem;
+            color: var(--text-main);
         }
 
         .rpm-value {
-            font-size: 4.5rem;
-            color: #FFFFFF;
-        }
-
-        /* Pulsante di controllo a schermo */
-        #connect-btn {
-            margin-top: 20px;
-            width: 100%;
-            padding: 15px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            background-color: #000000;
-            color: #CCFF00;
-            border: 3px solid #CCFF00;
-            border-radius: 10px;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-        #connect-btn:active {
-            background-color: #CCFF00;
-            color: #000000;
+            font-size: 4.8rem;
+            color: var(--text-muted);
         }
     </style>
 </head>
@@ -139,7 +127,7 @@
             <span id="status" class="disconnected">DISCONNESSO</span>
         </div>
 
-        <h1>BMW R1100S</h1>
+        <h1>BMW R1100S Dashboard</h1>
 
         <div id="page-0" class="page active">
             <div class="card card-full">
@@ -158,19 +146,19 @@
 
         <div id="page-1" class="page">
             <div class="card">
-                <div class="card-label">Motore (CLT)</div>
+                <div class="card-label">Temp. Motore (CLT)</div>
                 <div id="clt" class="card-value">0.0°C</div>
             </div>
             <div class="card">
-                <div class="card-label">Aria (IAT)</div>
+                <div class="card-label">Temp. Aria (IAT)</div>
                 <div id="iat" class="card-value">0.0°C</div>
             </div>
             <div class="card">
-                <div class="card-label">Batteria</div>
+                <div class="card-label">Tensione Batteria</div>
                 <div id="bat" class="card-value">0.00V</div>
             </div>
             <div class="card">
-                <div class="card-label">Lambda</div>
+                <div class="card-label">Sonda Lambda</div>
                 <div id="lmd" class="card-value">0</div>
             </div>
             <div class="card">
@@ -178,24 +166,16 @@
                 <div id="trip" class="card-value">0.0</div>
             </div>
             <div class="card">
-                <div class="card-label">Totale</div>
+                <div class="card-label">Odo Totale</div>
                 <div id="tot" class="card-value">0.0</div>
             </div>
         </div>
-
-        <button id="connect-btn">Connetti Bluetooth</button>
     </div>
 
     <script>
-        const SERVICE_UUID = "5bc1a100-36e1-4b13-9bbf-8547cb834f11";
-        const CHARACTERISTIC_UUID = "5bc1a101-36e1-4b13-9bbf-8547cb834f11";
-
-        let bluetoothDevice = null;
-        let dataCharacteristic = null;
-
-        const connectBtn = document.getElementById('connect-btn');
+        let ws;
         const statusEl = document.getElementById('status');
-
+        
         const elements = {
             rpm: document.getElementById('rpm'),
             spd: document.getElementById('spd'),
@@ -213,81 +193,50 @@
             document.getElementById('page-1')
         ];
 
-        connectBtn.addEventListener('click', async () => {
-            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
-                disconnect();
-            } else {
-                await connect();
-            }
-        });
+        function connect() {
+            // Connessione WebSocket all'IP dell'ESP32 locale
+            ws = new WebSocket(`ws://${window.location.hostname}/ws`);
 
-        async function connect() {
-            try {
-                statusEl.textContent = "CONNESSIONE...";
-                statusEl.className = "disconnected";
-
-                bluetoothDevice = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: "BMW_R1100S_Dashboard" }],
-                    optionalServices: [SERVICE_UUID]
-                });
-
-                bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
-
-                const server = await bluetoothDevice.gatt.connect();
-                const service = await server.getPrimaryService(SERVICE_UUID);
-                dataCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
-
-                await dataCharacteristic.startNotifications();
-                dataCharacteristic.addEventListener('characteristicvaluechanged', handleData);
-
+            ws.onopen = () => {
                 statusEl.textContent = "CONNESSO";
                 statusEl.className = "connected";
-                connectBtn.textContent = "Disconnetti";
-            } catch (error) {
-                console.error(error);
-                statusEl.textContent = "ERRORE";
+            };
+
+            ws.onclose = () => {
+                statusEl.textContent = "DISCONNESSO";
                 statusEl.className = "disconnected";
-            }
-        }
+                clearData();
+                setTimeout(connect, 2000); // Riconnessione automatica
+            };
 
-        function disconnect() {
-            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
-                bluetoothDevice.gatt.disconnect();
-            }
-        }
+            ws.onerror = (err) => {
+                console.error("Errore WebSocket:", err);
+                ws.close();
+            };
 
-        function onDisconnected() {
-            statusEl.textContent = "DISCONNESSO";
-            statusEl.className = "disconnected";
-            connectBtn.textContent = "Connetti Bluetooth";
-            clearData();
-        }
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // Aggiornamento campi con fallbacks di sicurezza
+                    elements.rpm.textContent = data.rpm ?? 0;
+                    elements.spd.textContent = data.spd ?? 0;
+                    elements.gear.textContent = (data.gear === 0 || !data.gear) ? "N" : data.gear;
+                    elements.clt.textContent = (data.clt ?? 0.0) + "°C";
+                    elements.iat.textContent = (data.iat ?? 0.0) + "°C";
+                    elements.bat.textContent = (data.bat ?? 0.00) + "V";
+                    elements.lmd.textContent = data.lmd ?? 0;
+                    elements.trip.textContent = data.trip ?? 0.0;
+                    elements.tot.textContent = data.tot ?? 0.0;
 
-        function handleData(event) {
-            const decoder = new TextDecoder('utf-8');
-            const jsonString = decoder.decode(event.target.value);
-
-            try {
-                const data = JSON.parse(jsonString);
-
-                // Aggiornamento dati con fallbacks di sicurezza
-                elements.rpm.textContent = data.rpm ?? 0;
-                elements.spd.textContent = data.spd ?? 0;
-                elements.gear.textContent = (data.gear === 0 || !data.gear) ? "N" : data.gear;
-                elements.clt.textContent = (data.clt ?? 0) + "°C";
-                elements.iat.textContent = (data.iat ?? 0) + "°C";
-                elements.bat.textContent = (data.bat ?? 0) + "V";
-                elements.lmd.textContent = data.lmd ?? 0;
-                elements.trip.textContent = data.trip ?? 0;
-                elements.tot.textContent = data.tot ?? 0;
-
-                // Gestione cambio pagina comandato da ESP32
-                if (typeof data.page !== 'undefined') {
-                    switchPage(data.page);
+                    // Cambio pagina gestito dal server (parametro "page" nel JSON)
+                    if (typeof data.page !== 'undefined') {
+                        switchPage(data.page);
+                    }
+                } catch (e) {
+                    console.error("Errore nel parsing dei dati:", e);
                 }
-            } catch (e) {
-                console.error("Errore parsing JSON:", e);
-            }
+            };
         }
 
         function switchPage(pageNum) {
@@ -311,6 +260,9 @@
             elements.trip.textContent = "0.0";
             elements.tot.textContent = "0.0";
         }
+
+        // Avvio connessione al caricamento della pagina
+        window.addEventListener('DOMContentLoaded', connect);
     </script>
 </body>
 </html>
