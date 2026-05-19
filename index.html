@@ -1,460 +1,316 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#111111">
-<link rel="manifest" href="Manifest.json">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<title>BMW R1100S</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:100%;height:100%;background:#111;overflow:hidden;}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMW R1100S Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-/* ── PAGES ── */
-.page{width:100%;height:100%;display:none;position:fixed;top:0;left:0;}
-.page.active{display:block;}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000000; /* Nero assoluto per annullare i riflessi */
+            color: #FFFFFF; /* Bianco puro per la massima leggibilità dei testi standard */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            padding: 10px;
+        }
 
-/* Page 0 – Dashboard */
-#page0{display:none;background:#111;}
-#page0.active{display:block;}
-.frame{position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;overflow:hidden;}
-canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
+        .dashboard-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #000000;
+            border: 3px solid #CCFF00; /* Bordo giallo fluo ad alta visibilità */
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+        }
 
-/* Page 1 – Map */
-#page1{background:#0a0a0a;}
-#map{width:100%;height:100%;}
+        /* Stato connessione */
+        #status-container {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .connected { color: #00FF00; } /* Verde per stato OK */
+        .disconnected { color: #FF0000; } /* Rosso per allarme/disconnesso */
 
-/* Speed overlay on map */
-#mapOverlay{
-    position:fixed;bottom:0;left:0;right:0;height:44px;
-    background:rgba(10,10,10,0.82);
-    display:flex;align-items:center;justify-content:center;gap:32px;
-    z-index:500;pointer-events:none;
-    border-top:1px solid #222;
-}
-#mapSpd{font-family:Arial;font-size:26px;font-weight:700;color:#fff;letter-spacing:2px;}
-#mapSpdUnit{font-family:Arial;font-size:11px;color:#666;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
-#mapGear{font-family:Arial;font-size:22px;font-weight:700;color:#ffa500;letter-spacing:2px;}
-#mapGearLabel{font-family:Arial;font-size:9px;color:#555;letter-spacing:2px;align-self:flex-end;margin-bottom:5px;}
-#mapClt{font-family:Arial;font-size:16px;font-weight:600;color:#aaa;letter-spacing:1px;}
-#mapCltLabel{font-family:Arial;font-size:9px;color:#555;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
-#mapBat{font-family:Arial;font-size:16px;font-weight:600;color:#aaa;letter-spacing:1px;}
-#mapBatLabel{font-family:Arial;font-size:9px;color:#555;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
+        /* Titolo e info di servizio */
+        h1 {
+            font-size: 1.5rem;
+            color: #CCFF00; /* Giallo fluo */
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
-/* ── STATUS BAR (global) ── */
-#st{position:fixed;bottom:4px;right:8px;font-size:11px;font-family:Arial;
-    color:#ffa500;letter-spacing:1px;font-weight:bold;z-index:1000;pointer-events:none;}
-/* on map page raise above overlay */
-.mapActive #st{bottom:50px;}
+        /* Layout delle Pagine */
+        .page {
+            display: none;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .page.active {
+            display: grid;
+        }
 
-/* ── PAGE INDICATOR ── */
-#pi{position:fixed;top:6px;right:10px;font-size:13px;font-family:Arial;
-    color:#444;z-index:1000;pointer-events:none;letter-spacing:4px;}
+        /* Card dei Dati */
+        .card {
+            background-color: #000000;
+            border: 2px solid #FFFFFF; /* Contorno bianco per staccare i blocchi */
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 140px;
+        }
 
-.ok{color:#22c55e!important;}
-.err{color:#f87171!important;}
+        /* Card a tutta larghezza (Giri e Giri/Velocità a seconda della pagina) */
+        .card-full {
+            grid-column: span 2;
+            min-height: 160px;
+            border-color: #CCFF00; /* Evidenziazione per i dati primari di guida */
+        }
 
-/* Leaflet tweaks */
-.leaflet-control-zoom{border:none!important;}
-.leaflet-control-zoom a{background:#1a1a1a!important;color:#888!important;border:1px solid #333!important;}
-.leaflet-control-zoom a:hover{background:#222!important;color:#fff!important;}
-</style>
+        .card-label {
+            font-size: 1.2rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #FFFFFF; /* Testo etichetta bianco */
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .card-value {
+            font-size: 3.5rem;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            color: #CCFF00; /* Giallo ambra/fluo per i dati numerici principali (massimo contrasto) */
+            line-height: 1;
+        }
+
+        /* Elementi critici (Marcia e Giri alti) */
+        .gear-value {
+            font-size: 6rem; /* Dimensione massimizzata per la marcia inserita */
+            color: #CCFF00;
+        }
+
+        .rpm-value {
+            font-size: 4.5rem;
+            color: #FFFFFF;
+        }
+
+        /* Pulsante di controllo a schermo */
+        #connect-btn {
+            margin-top: 20px;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background-color: #000000;
+            color: #CCFF00;
+            border: 3px solid #CCFF00;
+            border-radius: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        #connect-btn:active {
+            background-color: #CCFF00;
+            color: #000000;
+        }
+    </style>
 </head>
 <body>
 
-<!-- PAGE 0: DASHBOARD -->
-<div class="page active" id="page0">
-    <div class="frame">
-        <canvas id="c"></canvas>
+    <div class="dashboard-container">
+        <div id="status-container">
+            <span id="status" class="disconnected">DISCONNESSO</span>
+        </div>
+
+        <h1>BMW R1100S</h1>
+
+        <div id="page-0" class="page active">
+            <div class="card card-full">
+                <div class="card-label">Giri Motore (RPM)</div>
+                <div id="rpm" class="card-value rpm-value">0</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Velocità (KM/H)</div>
+                <div id="spd" class="card-value">0</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Marcia</div>
+                <div id="gear" class="card-value gear-value">-</div>
+            </div>
+        </div>
+
+        <div id="page-1" class="page">
+            <div class="card">
+                <div class="card-label">Motore (CLT)</div>
+                <div id="clt" class="card-value">0.0°C</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Aria (IAT)</div>
+                <div id="iat" class="card-value">0.0°C</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Batteria</div>
+                <div id="bat" class="card-value">0.00V</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Lambda</div>
+                <div id="lmd" class="card-value">0</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Trip</div>
+                <div id="trip" class="card-value">0.0</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Totale</div>
+                <div id="tot" class="card-value">0.0</div>
+            </div>
+        </div>
+
+        <button id="connect-btn">Connetti Bluetooth</button>
     </div>
-</div>
 
-<!-- PAGE 1: MAP -->
-<div class="page" id="page1">
-    <div id="map"></div>
-    <div id="mapOverlay">
-        <span id="mapSpd">0</span>
-        <span id="mapSpdUnit">km/h</span>
-        <span id="mapGearLabel">GEAR</span>
-        <span id="mapGear">-</span>
-        <span id="mapClt">0.0</span>
-        <span id="mapCltLabel">°C CLT</span>
-        <span id="mapBat">0.00</span>
-        <span id="mapBatLabel">V BAT</span>
-    </div>
-</div>
+    <script>
+        const SERVICE_UUID = "5bc1a100-36e1-4b13-9bbf-8547cb834f11";
+        const CHARACTERISTIC_UUID = "5bc1a101-36e1-4b13-9bbf-8547cb834f11";
 
-<!-- GLOBAL UI -->
-<div id="st">TAP TO CONNECT</div>
-<div id="pi">●○</div>
+        let bluetoothDevice = null;
+        let dataCharacteristic = null;
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script>
-// ═══════════════════════════════════════════════
-//  CONSTANTS
-// ═══════════════════════════════════════════════
-const SERVICE_UUID        = '5bc1a100-36e1-4b13-9bbf-8547cb834f11';
-const CHARACTERISTIC_UUID = '5bc1a101-36e1-4b13-9bbf-8547cb834f11';
-const DEVICE_NAME         = 'BMW_R1100S_Dashboard';
-const NUM_PAGES           = 2;
-const W = 800, H = 360;
+        const connectBtn = document.getElementById('connect-btn');
+        const statusEl = document.getElementById('status');
 
-// ═══════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════
-let data = { rpm:0, spd:0, iat:0, clt:0, lmd:0, bat:0, gear:'-', tot:0, trip:0, page:0 };
-let currentPage  = 0;
-let pollInterval = null;
-let bleDevice    = null;
-let retryTimer   = null;
-
-// Map state
-let leafletMap  = null;
-let mapMarker   = null;
-let watchId     = null;
-
-// ═══════════════════════════════════════════════
-//  DOM REFS
-// ═══════════════════════════════════════════════
-const canvas = document.getElementById('c');
-const ctx    = canvas.getContext('2d');
-const st     = document.getElementById('st');
-const pi     = document.getElementById('pi');
-
-// ═══════════════════════════════════════════════
-//  PAGE MANAGEMENT
-// ═══════════════════════════════════════════════
-function switchPage(n) {
-    const target = ((n % NUM_PAGES) + NUM_PAGES) % NUM_PAGES;
-    if (target === currentPage) return;
-
-    document.getElementById('page' + currentPage).classList.remove('active');
-    currentPage = target;
-    document.getElementById('page' + currentPage).classList.add('active');
-
-    // body class for status bar offset on map
-    document.body.className = currentPage === 1 ? 'mapActive' : '';
-
-    updatePageIndicator();
-
-    if (currentPage === 1) initMap();
-    else resizeAndDraw();
-}
-
-function updatePageIndicator() {
-    let s = '';
-    for (let i = 0; i < NUM_PAGES; i++) s += (i === currentPage ? '●' : '○');
-    pi.textContent = s;
-}
-
-// ═══════════════════════════════════════════════
-//  MAP (Leaflet + GPS)
-// ═══════════════════════════════════════════════
-function initMap() {
-    if (leafletMap) { leafletMap.invalidateSize(); return; }
-
-    leafletMap = L.map('map', {
-        zoomControl: true,
-        attributionControl: false,
-        tap: true
-    }).setView([45.65, 13.77], 15); // Trieste area default
-
-    // Dark tile layer (CartoDB Dark Matter)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd'
-    }).addTo(leafletMap);
-
-    // Orange dot marker (BMW style)
-    const markerHtml = `
-        <div style="
-            width:20px;height:20px;
-            background:#ffa500;
-            border-radius:50%;
-            border:3px solid #fff;
-            box-shadow:0 0 10px rgba(255,165,0,0.8);
-        "></div>`;
-    const markerIcon = L.divIcon({
-        className: '',
-        html: markerHtml,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
-    });
-
-    // Watch GPS position
-    if ('geolocation' in navigator) {
-        watchId = navigator.geolocation.watchPosition(
-            pos => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                if (!mapMarker) {
-                    mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(leafletMap);
-                } else {
-                    mapMarker.setLatLng([lat, lng]);
-                }
-                leafletMap.panTo([lat, lng], { animate: true, duration: 0.5 });
-            },
-            null,
-            { enableHighAccuracy: true, maximumAge: 1000 }
-        );
-    }
-}
-
-function updateMapOverlay() {
-    document.getElementById('mapSpd').textContent  = Math.round(data.spd);
-    document.getElementById('mapGear').textContent = data.gear;
-    document.getElementById('mapClt').textContent  = Number(data.clt).toFixed(1);
-    document.getElementById('mapBat').textContent  = Number(data.bat).toFixed(2);
-}
-
-// ═══════════════════════════════════════════════
-//  CANVAS – SEVEN SEGMENT
-// ═══════════════════════════════════════════════
-const SEGS = {
-    '0':[1,1,1,1,1,1,0],'1':[0,1,1,0,0,0,0],'2':[1,1,0,1,1,0,1],
-    '3':[1,1,1,1,0,0,1],'4':[0,1,1,0,0,1,1],'5':[1,0,1,1,0,1,1],
-    '6':[1,0,1,1,1,1,1],'7':[1,1,1,0,0,0,0],'8':[1,1,1,1,1,1,1],
-    '9':[1,1,1,1,0,1,1],' ':[0,0,0,0,0,0,0],'-':[0,0,0,0,0,0,1]
-};
-
-function fp(pts){ctx.beginPath();ctx.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)ctx.lineTo(pts[i],pts[i+1]);ctx.closePath();ctx.fill();}
-function dd(x,y,w,h,ch,sw,col){
-    const seg=SEGS[ch]||SEGS[' '],p=sw*0.45;
-    ctx.fillStyle=col||'#111';
-    if(seg[0])fp([x+p,y,x+w-p,y,x+w-p-sw,y+sw,x+p+sw,y+sw]);
-    if(seg[1])fp([x+w,y+p,x+w,y+h/2-p,x+w-sw,y+h/2-p-sw*0.3,x+w-sw,y+p+sw]);
-    if(seg[2])fp([x+w,y+h/2+p,x+w,y+h-p,x+w-sw,y+h-p-sw,x+w-sw,y+h/2+p+sw*0.3]);
-    if(seg[3])fp([x+p,y+h,x+w-p,y+h,x+w-p-sw,y+h-sw,x+p+sw,y+h-sw]);
-    if(seg[4])fp([x,y+h/2+p,x,y+h-p,x+sw,y+h-p-sw,x+sw,y+h/2+p+sw*0.3]);
-    if(seg[5])fp([x,y+p,x,y+h/2-p,x+sw,y+h/2-p-sw*0.3,x+sw,y+p+sw]);
-    if(seg[6])fp([x+p+sw*0.3,y+h/2,x+p+sw,y+h/2-sw*0.45,x+w-p-sw,y+h/2-sw*0.45,x+w-p-sw*0.3,y+h/2,x+w-p-sw,y+h/2+sw*0.45,x+p+sw,y+h/2+sw*0.45]);
-}
-function dot(x,y,r,col){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=col||'#111';ctx.fill();}
-function dn(str,x,y,dw,dh,sw,gap,col){
-    let cx=x;
-    for(let i=0;i<str.length;i++){
-        const ch=str[i];
-        if(ch==='.'){dot(cx+sw*0.5,y+dh+sw*0.15,sw*0.45,col);cx+=sw*1.2;}
-        else{if(ch!=' ')dd(cx,y,dw,dh,ch,sw,col);cx+=dw+gap;}
-    }
-}
-function tw(str,dw,sw,gap){let w=0;for(let i=0;i<str.length;i++)w+=str[i]==='.'?sw*1.2:dw+gap;return w-gap;}
-function lb(txt,x,y,sz,col,sp){ctx.fillStyle=col||'#999';ctx.font=`600 ${sz||9}px Arial`;ctx.letterSpacing=(sp||'2')+'px';ctx.fillText(txt,x,y);}
-function un(txt,x,y){ctx.fillStyle='#777';ctx.font='400 11px Arial';ctx.letterSpacing='0px';ctx.fillText(txt,x,y);}
-
-function draw() {
-    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
-    const SP=H*0.60, HL=W*0.5;
-    ctx.fillStyle='#eee';
-    ctx.fillRect(0,SP,W,0.5); ctx.fillRect(HL,0,0.5,SP);
-    for(let i=1;i<4;i++) ctx.fillRect(W*i/5,SP,0.5,H-SP);
-    ctx.fillRect(W*4/5,SP,0.5,H-SP);
-
-    // RPM
-    const DWB=58,DHB=106,SWB=11,GB=10;
-    const rs=String(Math.round(data.rpm)),rw=tw(rs,DWB,SWB,GB),rx=(HL-rw)/2,ry=(SP-DHB)/2;
-    dn(rs,rx,ry,DWB,DHB,SWB,GB); lb('RPM',rx,ry-8,11,'#888','4');
-
-    // SPEED
-    const ss=String(Math.round(data.spd)),sw2=tw(ss,DWB,SWB,GB),sx=HL+(HL-sw2)/2-24,sy=ry;
-    dn(ss,sx,sy,DWB,DHB,SWB,GB); un('km/h',sx+sw2+12,sy+DHB); lb('SPEED',sx,sy-8,11,'#888','4');
-
-    // TOT / TRIP
-    const DWK=12,DHK=22,SWK=2.6,GK=2,ty=sy+DHB+18;
-    ctx.fillStyle='#eee'; ctx.fillRect(HL+8,ty-6,HL-16,0.5);
-    const ts=Number(data.tot).toFixed(1),tw2=tw(ts,DWK,SWK,GK),tx=HL+12;
-    dn(ts,tx,ty,DWK,DHK,SWK,GK);
-    ctx.fillStyle='#888'; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',tx+tw2+4,ty+DHK-1);
-    lb('TOT',tx,ty-4,7,'#999','1.5');
-    const tr=Number(data.trip).toFixed(1),trw=tw(tr,DWK,SWK,GK),trx=HL+HL/2+4;
-    dn(tr,trx,ty,DWK,DHK,SWK,GK);
-    ctx.fillStyle='#888'; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',trx+trw+4,ty+DHK-1);
-    lb('TRIP',trx,ty-4,7,'#999','1.5');
-    ctx.fillStyle='#eee'; ctx.fillRect(HL+HL/2-2,ty,0.5,DHK+10);
-
-    // BOTTOM PARAMS
-    const DWS=19,DHS=40,SWS=4,GS=3,BY=SP+(H-SP-DHS)/2;
-    const params=[
-        {l:'IAT', v:Number(data.iat).toFixed(1), u:'°C'},
-        {l:'CLT', v:Number(data.clt).toFixed(1), u:'°C'},
-        {l:'LMD', v:String(Math.round(data.lmd)),  u:'mV'},
-        {l:'BAT', v:Number(data.bat).toFixed(2),   u:'V'}
-    ];
-    params.forEach(({l,v,u},c)=>{
-        const cw=W/5,cx=c*cw,vw=tw(v,DWS,SWS,GS),bx=cx+(cw-vw)/2-8;
-        dn(v,bx,BY,DWS,DHS,SWS,GS);
-        ctx.fillStyle='#777'; ctx.font='400 11px Arial'; ctx.letterSpacing='0px'; ctx.fillText(u,bx+vw+5,BY+DHS);
-        ctx.fillStyle='#999'; ctx.font='600 9px Arial'; ctx.letterSpacing='2px'; ctx.fillText(l,bx,BY-9);
-    });
-
-    // GEAR
-    const DWG=32,DHG=54,SWG=7,gcx=W*4/5,gcw=W/5;
-    const gs=String(data.gear),gw=tw(gs,DWG,SWG,0),gx=gcx+(gcw-gw)/2,gy=SP+(H-SP-DHG)/2;
-    dn(gs,gx,gy,DWG,DHG,SWG,0);
-    ctx.fillStyle='#999'; ctx.font='600 9px Arial'; ctx.letterSpacing='2px'; ctx.fillText('GEAR',gx,gy-9);
-}
-
-function resizeAndDraw() {
-    requestAnimationFrame(() => {
-        const w = document.documentElement.clientWidth;
-        const h = document.documentElement.clientHeight;
-        canvas.style.width  = w + 'px';
-        canvas.style.height = h + 'px';
-        canvas.width  = w * devicePixelRatio;
-        canvas.height = h * devicePixelRatio;
-        ctx.setTransform(canvas.width/W, 0, 0, canvas.height/H, 0, 0);
-        draw();
-    });
-}
-window.addEventListener('resize', resizeAndDraw);
-window.addEventListener('orientationchange', () => {
-    setTimeout(resizeAndDraw, 100);
-    setTimeout(resizeAndDraw, 400);
-});
-
-// ═══════════════════════════════════════════════
-//  BLE – CONNECTION
-// ═══════════════════════════════════════════════
-async function setupConnection(device) {
-    bleDevice = device;
-    st.textContent = 'CONNECTING...';
-    st.className = '';
-    if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
-
-    try {
-        const server     = await device.gatt.connect();
-        const service    = await server.getPrimaryService(SERVICE_UUID);
-        const charct     = await service.getCharacteristic(CHARACTERISTIC_UUID);
-
-        const readData = async () => {
-            try {
-                const value     = await charct.readValue();
-                const parsed    = JSON.parse(new TextDecoder().decode(value));
-
-                // Page switching (detect edge 0→1→0...)
-                if (parsed.page !== undefined && parsed.page !== currentPage) {
-                    switchPage(parsed.page);
-                }
-
-                Object.assign(data, parsed);
-
-                if (currentPage === 0) draw();
-                else updateMapOverlay();
-
-                st.textContent = 'LIVE';
-                st.className   = 'ok';
-            } catch(e) { /* silent – transient read error */ }
+        const elements = {
+            rpm: document.getElementById('rpm'),
+            spd: document.getElementById('spd'),
+            gear: document.getElementById('gear'),
+            clt: document.getElementById('clt'),
+            iat: document.getElementById('iat'),
+            bat: document.getElementById('bat'),
+            lmd: document.getElementById('lmd'),
+            trip: document.getElementById('trip'),
+            tot: document.getElementById('tot')
         };
 
-        await readData();
-        if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(readData, 250);
+        const pages = [
+            document.getElementById('page-0'),
+            document.getElementById('page-1')
+        ];
 
-        device.addEventListener('gattserverdisconnected', () => {
-            if (pollInterval) clearInterval(pollInterval);
-            st.textContent = 'RECONNECTING...';
-            st.className   = 'err';
-            scheduleRetry(device);
+        connectBtn.addEventListener('click', async () => {
+            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+                disconnect();
+            } else {
+                await connect();
+            }
         });
 
-        st.textContent = 'LIVE';
-        st.className   = 'ok';
+        async function connect() {
+            try {
+                statusEl.textContent = "CONNESSIONE...";
+                statusEl.className = "disconnected";
 
-    } catch(e) {
-        st.textContent = 'ERROR';
-        st.className   = 'err';
-        scheduleRetry(device);
-    }
-}
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: "BMW_R1100S_Dashboard" }],
+                    optionalServices: [SERVICE_UUID]
+                });
 
-let retryCount = 0;
-function scheduleRetry(device) {
-    if (retryTimer) clearTimeout(retryTimer);
-    if (retryCount >= 20) {
-        retryCount = 0;
-        st.textContent = 'TAP TO CONNECT';
-        st.className   = 'err';
-        bleDevice = null;
-        return;
-    }
-    retryCount++;
-    retryTimer = setTimeout(() => setupConnection(device), 2000);
-}
+                bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
 
-// ─── First connect (shows picker only if device unknown) ───
-async function connectBLE() {
-    if (!navigator.bluetooth) {
-        st.textContent = 'BT NOT SUPPORTED';
-        st.className   = 'err';
-        return;
-    }
-    try {
-        st.textContent = 'SCANNING...';
-        st.className   = '';
-        let device = await tryKnownDevice();
-        if (!device) {
-            device = await navigator.bluetooth.requestDevice({
-                filters: [{ name: DEVICE_NAME }],
-                optionalServices: [SERVICE_UUID]
+                const server = await bluetoothDevice.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                dataCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+                await dataCharacteristic.startNotifications();
+                dataCharacteristic.addEventListener('characteristicvaluechanged', handleData);
+
+                statusEl.textContent = "CONNESSO";
+                statusEl.className = "connected";
+                connectBtn.textContent = "Disconnetti";
+            } catch (error) {
+                console.error(error);
+                statusEl.textContent = "ERRORE";
+                statusEl.className = "disconnected";
+            }
+        }
+
+        function disconnect() {
+            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+                bluetoothDevice.gatt.disconnect();
+            }
+        }
+
+        function onDisconnected() {
+            statusEl.textContent = "DISCONNESSO";
+            statusEl.className = "disconnected";
+            connectBtn.textContent = "Connetti Bluetooth";
+            clearData();
+        }
+
+        function handleData(event) {
+            const decoder = new TextDecoder('utf-8');
+            const jsonString = decoder.decode(event.target.value);
+
+            try {
+                const data = JSON.parse(jsonString);
+
+                // Aggiornamento dati con fallbacks di sicurezza
+                elements.rpm.textContent = data.rpm ?? 0;
+                elements.spd.textContent = data.spd ?? 0;
+                elements.gear.textContent = (data.gear === 0 || !data.gear) ? "N" : data.gear;
+                elements.clt.textContent = (data.clt ?? 0) + "°C";
+                elements.iat.textContent = (data.iat ?? 0) + "°C";
+                elements.bat.textContent = (data.bat ?? 0) + "V";
+                elements.lmd.textContent = data.lmd ?? 0;
+                elements.trip.textContent = data.trip ?? 0;
+                elements.tot.textContent = data.tot ?? 0;
+
+                // Gestione cambio pagina comandato da ESP32
+                if (typeof data.page !== 'undefined') {
+                    switchPage(data.page);
+                }
+            } catch (e) {
+                console.error("Errore parsing JSON:", e);
+            }
+        }
+
+        function switchPage(pageNum) {
+            pages.forEach((page, index) => {
+                if (index === pageNum) {
+                    page.classList.add('active');
+                } else {
+                    page.classList.remove('active');
+                }
             });
         }
-        retryCount = 0;
-        await setupConnection(device);
-    } catch(e) {
-        st.textContent = 'TAP TO CONNECT';
-        st.className   = 'err';
-    }
-}
 
-// ─── Try known devices (no dialog) ───
-async function tryKnownDevice() {
-    if (!navigator.bluetooth.getDevices) return null;
-    try {
-        const devices = await navigator.bluetooth.getDevices();
-        return devices.find(d => d.name === DEVICE_NAME) || null;
-    } catch(e) { return null; }
-}
-
-// ═══════════════════════════════════════════════
-//  AUTO-CONNECT ON LOAD (no gesture needed for known device)
-// ═══════════════════════════════════════════════
-window.addEventListener('load', async () => {
-    resizeAndDraw();
-    setTimeout(resizeAndDraw, 100);
-    setTimeout(resizeAndDraw, 300);
-    setTimeout(resizeAndDraw, 800);
-
-    const device = await tryKnownDevice();
-    if (device) {
-        st.textContent = 'AUTO CONNECT...';
-        retryCount = 0;
-        await setupConnection(device);
-    }
-});
-
-// ═══════════════════════════════════════════════
-//  USER INTERACTIONS
-// ═══════════════════════════════════════════════
-// Tap canvas page0 = connect (manual fallback)
-canvas.addEventListener('click', () => {
-    if (!bleDevice?.gatt?.connected) connectBLE();
-});
-
-// Double-tap = fullscreen (fallback oltre alla PWA)
-canvas.addEventListener('dblclick', () => {
-    document.documentElement.requestFullscreen?.();
-});
-
-// ═══════════════════════════════════════════════
-//  SERVICE WORKER (PWA offline)
-// ═══════════════════════════════════════════════
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-}
-</script>
+        function clearData() {
+            elements.rpm.textContent = "0";
+            elements.spd.textContent = "0";
+            elements.gear.textContent = "-";
+            elements.clt.textContent = "0.0°C";
+            elements.iat.textContent = "0.0°C";
+            elements.bat.textContent = "0.00V";
+            elements.lmd.textContent = "0";
+            elements.trip.textContent = "0.0";
+            elements.tot.textContent = "0.0";
+        }
+    </script>
 </body>
 </html>
