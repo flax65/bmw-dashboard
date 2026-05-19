@@ -28,28 +28,63 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 #page1{background:#0a0a0a;}
 #map{width:100%;height:100%;}
 
-/* Speed overlay on map */
+/* ── TURN INSTRUCTION BAR ── */
+#navBar{
+    position:fixed;top:0;left:0;right:0;height:48px;
+    background:rgba(0,0,0,0.88);
+    display:none;align-items:center;gap:12px;
+    padding:0 16px;z-index:600;
+    border-bottom:1px solid #222;
+}
+#navBar.show{display:flex;}
+#navArrow{font-size:28px;line-height:1;flex-shrink:0;}
+#navText{font-family:Arial;font-size:14px;font-weight:600;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#navDist{font-family:Arial;font-size:20px;font-weight:700;color:#ffa500;flex-shrink:0;letter-spacing:1px;}
+
+/* ── DATA OVERLAY (bottom) ── */
 #mapOverlay{
-    position:fixed;bottom:0;left:0;right:0;height:44px;
-    background:rgba(10,10,10,0.82);
-    display:flex;align-items:center;justify-content:center;gap:32px;
+    position:fixed;bottom:0;left:0;right:0;
+    background:rgba(0,0,0,0.88);
+    display:flex;align-items:stretch;
     z-index:500;pointer-events:none;
     border-top:1px solid #222;
 }
-#mapSpd{font-family:Arial;font-size:26px;font-weight:700;color:#fff;letter-spacing:2px;}
-#mapSpdUnit{font-family:Arial;font-size:11px;color:#666;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
-#mapGear{font-family:Arial;font-size:22px;font-weight:700;color:#ffa500;letter-spacing:2px;}
-#mapGearLabel{font-family:Arial;font-size:9px;color:#555;letter-spacing:2px;align-self:flex-end;margin-bottom:5px;}
-#mapClt{font-family:Arial;font-size:16px;font-weight:600;color:#aaa;letter-spacing:1px;}
-#mapCltLabel{font-family:Arial;font-size:9px;color:#555;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
-#mapBat{font-family:Arial;font-size:16px;font-weight:600;color:#aaa;letter-spacing:1px;}
-#mapBatLabel{font-family:Arial;font-size:9px;color:#555;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
+.mdata{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:6px 4px;border-right:1px solid #1a1a1a;
+}
+.mdata:last-child{border-right:none;}
+.mdata-val{font-family:Arial;font-weight:700;color:#fff;line-height:1;}
+.mdata-lbl{font-family:Arial;font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;}
+.mdata-val.big{font-size:28px;color:#ffa500;}
+.mdata-val.med{font-size:18px;}
+.mdata-val.sml{font-size:14px;color:#aaa;}
+
+/* ── MAP CONTROLS (overlay buttons) ── */
+#mapControls{
+    position:fixed;right:10px;bottom:110px;
+    display:flex;flex-direction:column;gap:4px;
+    z-index:600;
+}
+.mctrl{
+    width:36px;height:36px;
+    background:rgba(20,20,20,0.9);
+    border:1px solid #333;border-radius:4px;
+    color:#aaa;font-size:10px;font-weight:700;
+    letter-spacing:0.5px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all 0.2s;font-family:Arial;
+}
+.mctrl:hover{border-color:#ffa500;color:#ffa500;}
+.mctrl.active{background:#ffa500;color:#000;border-color:#ffa500;}
 
 /* ── STATUS BAR (global) ── */
 #st{position:fixed;bottom:4px;right:8px;font-size:11px;font-family:Arial;
     color:#ffa500;letter-spacing:1px;font-weight:bold;z-index:1000;pointer-events:none;}
-/* on map page raise above overlay */
-.mapActive #st{bottom:50px;}
+.mapActive #st{bottom:80px;}
+
+/* Route polyline shown on map */
+.leaflet-control-zoom{margin-bottom:4px!important;}
 
 /* ── PAGE INDICATOR ── */
 #pi{position:fixed;top:6px;right:10px;font-size:13px;font-family:Arial;
@@ -76,15 +111,42 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 <!-- PAGE 1: MAP -->
 <div class="page" id="page1">
     <div id="map"></div>
+
+    <!-- Turn instruction -->
+    <div id="navBar">
+        <div id="navArrow">↑</div>
+        <div id="navText">In rotta</div>
+        <div id="navDist"></div>
+    </div>
+
+    <!-- Data overlay bottom -->
     <div id="mapOverlay">
-        <span id="mapSpd">0</span>
-        <span id="mapSpdUnit">km/h</span>
-        <span id="mapGearLabel">GEAR</span>
-        <span id="mapGear">-</span>
-        <span id="mapClt">0.0</span>
-        <span id="mapCltLabel">°C CLT</span>
-        <span id="mapBat">0.00</span>
-        <span id="mapBatLabel">V BAT</span>
+        <div class="mdata">
+            <div class="mdata-val big" id="mapSpd">0</div>
+            <div class="mdata-lbl">km/h</div>
+        </div>
+        <div class="mdata">
+            <div class="mdata-val med" id="mapGear">-</div>
+            <div class="mdata-lbl">GEAR</div>
+        </div>
+        <div class="mdata">
+            <div class="mdata-val sml" id="mapRpm">0</div>
+            <div class="mdata-lbl">RPM</div>
+        </div>
+        <div class="mdata">
+            <div class="mdata-val sml" id="mapClt">0.0</div>
+            <div class="mdata-lbl">°C CLT</div>
+        </div>
+        <div class="mdata">
+            <div class="mdata-val sml" id="mapBat">0.00</div>
+            <div class="mdata-lbl">V BAT</div>
+        </div>
+    </div>
+
+    <!-- Map control buttons -->
+    <div id="mapControls">
+        <button class="mctrl" id="btnNorth" title="Nord fisso / Heading up">N↑</button>
+        <button class="mctrl" id="btnZoom"  title="Zoom auto / manuale">AUTO</button>
     </div>
 </div>
 
@@ -154,6 +216,26 @@ function updatePageIndicator() {
 // ═══════════════════════════════════════════════
 //  MAP (Leaflet + GPS)
 // ═══════════════════════════════════════════════
+// ── Map state ──────────────────────────────────
+let headingUp   = false;   // false = nord fisso
+let autoZoom    = true;    // true  = zoom automatico
+let zoomManTimer = null;   // timer ripristino auto-zoom
+let routeLayer  = null;    // polyline percorso
+let navSteps    = [];      // array step navigazione
+let currentStep = 0;       // step attuale
+let gpsSpeed    = 0;       // velocità GPS km/h
+let gpsHeading  = 0;       // direzione GPS gradi
+
+const markerHtml = `<div style="
+    width:20px;height:20px;background:#ffa500;
+    border-radius:50%;border:3px solid #fff;
+    box-shadow:0 0 10px rgba(255,165,0,0.8);
+"></div>`;
+const markerIcon = L.divIcon({
+    className:'', html: markerHtml,
+    iconSize:[20,20], iconAnchor:[10,10]
+});
+
 function initMap() {
     if (leafletMap) { leafletMap.invalidateSize(); return; }
 
@@ -161,54 +243,201 @@ function initMap() {
         zoomControl: true,
         attributionControl: false,
         tap: true
-    }).setView([45.65, 13.77], 15); // Trieste area default
+    }).setView([45.65, 13.77], 15);
 
-    // Dark tile layer (CartoDB Dark Matter)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd'
+        maxZoom: 19, subdomains: 'abcd'
     }).addTo(leafletMap);
 
-    // Orange dot marker (BMW style)
-    const markerHtml = `
-        <div style="
-            width:20px;height:20px;
-            background:#ffa500;
-            border-radius:50%;
-            border:3px solid #fff;
-            box-shadow:0 0 10px rgba(255,165,0,0.8);
-        "></div>`;
-    const markerIcon = L.divIcon({
-        className: '',
-        html: markerHtml,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
+    // Manual zoom → disable auto-zoom for 10s
+    leafletMap.on('zoomstart', () => {
+        if (autoZoom) {
+            autoZoom = false;
+            document.getElementById('btnZoom').textContent = 'MAN';
+            document.getElementById('btnZoom').classList.remove('active');
+        }
+        clearTimeout(zoomManTimer);
+        zoomManTimer = setTimeout(() => {
+            autoZoom = true;
+            document.getElementById('btnZoom').textContent = 'AUTO';
+            document.getElementById('btnZoom').classList.add('active');
+        }, 10000);
     });
 
-    // Watch GPS position
+    // Watch GPS
     if ('geolocation' in navigator) {
-        watchId = navigator.geolocation.watchPosition(
-            pos => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                if (!mapMarker) {
-                    mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(leafletMap);
-                } else {
-                    mapMarker.setLatLng([lat, lng]);
-                }
-                leafletMap.panTo([lat, lng], { animate: true, duration: 0.5 });
-            },
-            null,
-            { enableHighAccuracy: true, maximumAge: 1000 }
-        );
+        watchId = navigator.geolocation.watchPosition(pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            gpsSpeed   = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
+            gpsHeading = pos.coords.heading || 0;
+
+            // Update speed display (GPS)
+            document.getElementById('mapSpd').textContent = Math.round(gpsSpeed);
+
+            // Marker
+            if (!mapMarker) {
+                mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(leafletMap);
+            } else {
+                mapMarker.setLatLng([lat, lng]);
+            }
+
+            // Heading-up: rotate map
+            if (headingUp && gpsHeading !== null) {
+                leafletMap.getContainer().style.transform = `rotate(${-gpsHeading}deg)`;
+                leafletMap.getContainer().style.transformOrigin = '50% 50%';
+            } else {
+                leafletMap.getContainer().style.transform = '';
+            }
+
+            // Auto-zoom by speed
+            if (autoZoom) {
+                let z = 16;
+                if      (gpsSpeed > 130) z = 12;
+                else if (gpsSpeed > 90)  z = 13;
+                else if (gpsSpeed > 50)  z = 14;
+                else if (gpsSpeed > 10)  z = 15;
+                if (leafletMap.getZoom() !== z)
+                    leafletMap.setZoom(z, { animate: true });
+            }
+
+            leafletMap.panTo([lat, lng], { animate: true, duration: 0.5 });
+
+            // Navigation: find next step
+            updateNavigation(lat, lng);
+
+        }, null, { enableHighAccuracy: true, maximumAge: 1000 });
     }
+
+    // Load route from GitHub if available
+    loadRoute();
+
+    // Controls
+    document.getElementById('btnNorth').addEventListener('click', () => {
+        headingUp = !headingUp;
+        const btn = document.getElementById('btnNorth');
+        btn.textContent = headingUp ? 'HDG' : 'N↑';
+        btn.classList.toggle('active', headingUp);
+        if (!headingUp) leafletMap.getContainer().style.transform = '';
+    });
+
+    document.getElementById('btnZoom').addEventListener('click', () => {
+        autoZoom = !autoZoom;
+        const btn = document.getElementById('btnZoom');
+        btn.textContent = autoZoom ? 'AUTO' : 'MAN';
+        btn.classList.toggle('active', autoZoom);
+        clearTimeout(zoomManTimer);
+    });
+
+    // Set initial zoom btn state
+    document.getElementById('btnZoom').classList.add('active');
+}
+
+// ── Load route.json from GitHub Pages ──────────
+async function loadRoute() {
+    try {
+        const url = `https://flax65.github.io/bmw-dashboard/route.json?t=${Date.now()}`;
+        const res  = await fetch(url);
+        const json = await res.json();
+        if (!json.route) return;
+        drawRoute(json.route);
+    } catch(e) {}
+}
+
+function drawRoute(route) {
+    if (routeLayer) { routeLayer.remove(); routeLayer = null; }
+    navSteps   = [];
+    currentStep = 0;
+
+    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+    routeLayer = L.polyline(coords, {
+        color: '#ffa500', weight: 5, opacity: 0.8
+    }).addTo(leafletMap);
+
+    // Flatten all steps from all legs
+    route.legs.forEach(leg => {
+        leg.steps.forEach(step => {
+            if (step.maneuver) navSteps.push(step);
+        });
+    });
+
+    if (navSteps.length) showNavBar();
+}
+
+// ── Navigation: find nearest step ──────────────
+function updateNavigation(lat, lng) {
+    if (!navSteps.length) return;
+    if (currentStep >= navSteps.length) return;
+
+    const step = navSteps[currentStep];
+    const slat = step.maneuver.location[1];
+    const slng = step.maneuver.location[0];
+    const dist = haversine(lat, lng, slat, slng);
+
+    // Advance step if within 30m
+    if (dist < 30 && currentStep < navSteps.length - 1) {
+        currentStep++;
+    }
+
+    // Show next step info
+    const next = navSteps[currentStep];
+    document.getElementById('navArrow').textContent =
+        maneuverArrow(next.maneuver.type, next.maneuver.modifier);
+    document.getElementById('navText').textContent =
+        next.name || formatManeuver(next.maneuver.type, next.maneuver.modifier);
+    document.getElementById('navDist').textContent = formatDist(dist);
+}
+
+function showNavBar() {
+    document.getElementById('navBar').classList.add('show');
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 +
+              Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function maneuverArrow(type, mod) {
+    if (type === 'arrive')    return '🏁';
+    if (type === 'depart')    return '↑';
+    if (type === 'roundabout' || type === 'rotary') return '↻';
+    const arrows = {
+        'left':'↰','sharp left':'↺','slight left':'↖',
+        'right':'↱','sharp right':'↻','slight right':'↗',
+        'straight':'↑','uturn':'↩'
+    };
+    return arrows[mod] || '↑';
+}
+
+function formatManeuver(type, mod) {
+    if (type === 'arrive')    return 'Arrivo a destinazione';
+    if (type === 'depart')    return 'Partenza';
+    if (type === 'roundabout') return 'Rotatoria';
+    const labels = {
+        'left':'Svolta a sinistra','sharp left':'Svolta brusca sinistra',
+        'slight left':'Tieni la sinistra','right':'Svolta a destra',
+        'sharp right':'Svolta brusca destra','slight right':'Tieni la destra',
+        'straight':'Prosegui dritto','uturn':'Inversione a U'
+    };
+    return labels[mod] || 'Continua';
+}
+
+function formatDist(m) {
+    return m >= 1000 ? (m/1000).toFixed(1)+' km' : Math.round(m)+' m';
 }
 
 function updateMapOverlay() {
-    document.getElementById('mapSpd').textContent  = Math.round(data.spd);
+    // Speed from GPS (more accurate for map page)
+    // data.spd from BLE used as fallback
     document.getElementById('mapGear').textContent = data.gear;
+    document.getElementById('mapRpm').textContent  = Math.round(data.rpm);
     document.getElementById('mapClt').textContent  = Number(data.clt).toFixed(1);
     document.getElementById('mapBat').textContent  = Number(data.bat).toFixed(2);
+    // mapSpd is updated directly in the GPS watchPosition callback
 }
 
 // ═══════════════════════════════════════════════
