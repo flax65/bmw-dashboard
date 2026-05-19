@@ -164,9 +164,9 @@ function initMap() {
     }).setView([45.65, 13.77], 15); // Trieste area default
 
     // Dark tile layer (CartoDB Dark Matter)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd'
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    subdomains: 'abc'
     }).addTo(leafletMap);
 
     // Orange dot marker (BMW style)
