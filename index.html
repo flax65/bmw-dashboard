@@ -6,62 +6,67 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#111111">
+<meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="Manifest.json">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <title>BMW R1100S</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:100%;height:100%;background:#111;overflow:hidden;}
+html,body{width:100%;height:100%;background:#f5f5f5;overflow:hidden;}
 
 /* ── PAGES ── */
 .page{width:100%;height:100%;display:none;position:fixed;top:0;left:0;}
 .page.active{display:block;}
 
 /* Page 0 – Dashboard */
-#page0{display:none;background:#111;}
+#page0{display:none;background:#f5f5f5;}
 #page0.active{display:block;}
 .frame{position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;overflow:hidden;}
 canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 
 /* Page 1 – Map */
-#page1{background:#0a0a0a;}
+#page1{background:#f0f0f0;}
 #map{width:100%;height:100%;}
 
 /* Speed overlay on map */
 #mapOverlay{
     position:fixed;bottom:0;left:0;right:0;height:44px;
-    background:rgba(10,10,10,0.82);
+    background:rgba(245,245,245,0.92);
     display:flex;align-items:center;justify-content:center;gap:32px;
     z-index:500;pointer-events:none;
-    border-top:1px solid #222;
+    border-top:1px solid #ccc;
 }
-#mapSpd{font-family:Arial;font-size:26px;font-weight:700;color:#fff;letter-spacing:2px;}
-#mapSpdUnit{font-family:Arial;font-size:11px;color:#666;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
-#mapGear{font-family:Arial;font-size:22px;font-weight:700;color:#ffa500;letter-spacing:2px;}
-#mapGearLabel{font-family:Arial;font-size:9px;color:#555;letter-spacing:2px;align-self:flex-end;margin-bottom:5px;}
-#mapClt{font-family:Arial;font-size:16px;font-weight:600;color:#aaa;letter-spacing:1px;}
-#mapCltLabel{font-family:Arial;font-size:9px;color:#555;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
-#mapBat{font-family:Arial;font-size:16px;font-weight:600;color:#aaa;letter-spacing:1px;}
-#mapBatLabel{font-family:Arial;font-size:9px;color:#555;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
+#mapSpd{font-family:Arial;font-size:26px;font-weight:700;color:#111;letter-spacing:2px;}
+#mapSpdUnit{font-family:Arial;font-size:11px;color:#999;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
+#mapGear{font-family:Arial;font-size:22px;font-weight:700;color:#e67300;letter-spacing:2px;}
+#mapGearLabel{font-family:Arial;font-size:9px;color:#aaa;letter-spacing:2px;align-self:flex-end;margin-bottom:5px;}
+#mapClt{font-family:Arial;font-size:16px;font-weight:600;color:#555;letter-spacing:1px;}
+#mapCltLabel{font-family:Arial;font-size:9px;color:#aaa;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
+#mapBat{font-family:Arial;font-size:16px;font-weight:600;color:#555;letter-spacing:1px;}
+#mapBatLabel{font-family:Arial;font-size:9px;color:#aaa;letter-spacing:2px;align-self:flex-end;margin-bottom:4px;}
 
 /* ── STATUS BAR (global) ── */
 #st{position:fixed;bottom:4px;right:8px;font-size:11px;font-family:Arial;
-    color:#ffa500;letter-spacing:1px;font-weight:bold;z-index:1000;pointer-events:none;}
+    color:#e67300;letter-spacing:1px;font-weight:bold;z-index:1000;pointer-events:none;}
 /* on map page raise above overlay */
 .mapActive #st{bottom:50px;}
 
 /* ── PAGE INDICATOR ── */
 #pi{position:fixed;top:6px;right:10px;font-size:13px;font-family:Arial;
-    color:#444;z-index:1000;pointer-events:none;letter-spacing:4px;}
+    color:#bbb;z-index:1000;pointer-events:none;letter-spacing:4px;}
 
-.ok{color:#22c55e!important;}
-.err{color:#f87171!important;}
+.ok{color:#15803d!important;}
+.err{color:#dc2626!important;}
 
 /* Leaflet tweaks */
 .leaflet-control-zoom{border:none!important;}
-.leaflet-control-zoom a{background:#1a1a1a!important;color:#888!important;border:1px solid #333!important;}
-.leaflet-control-zoom a:hover{background:#222!important;color:#fff!important;}
+.leaflet-control-zoom a{background:#fff!important;color:#666!important;border:1px solid #ddd!important;}
+.leaflet-control-zoom a:hover{background:#f0f0f0!important;color:#111!important;}
+
+/* Map tile overlay style */
+.leaflet-container {
+    background: #e8e8e8;
+}
 </style>
 </head>
 <body>
@@ -163,20 +168,21 @@ function initMap() {
         tap: true
     }).setView([45.65, 13.77], 15); // Trieste area default
 
-    // Dark tile layer (CartoDB Dark Matter)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // Light tile layer (CartoDB Voyager - light theme)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
-        subdomains: 'abcd'
+        subdomains: 'abcd',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors'
     }).addTo(leafletMap);
 
     // Orange dot marker (BMW style)
     const markerHtml = `
         <div style="
             width:20px;height:20px;
-            background:#ffa500;
+            background:#e67300;
             border-radius:50%;
-            border:3px solid #fff;
-            box-shadow:0 0 10px rgba(255,165,0,0.8);
+            border:3px solid #333;
+            box-shadow:0 0 10px rgba(230,115,0,0.8);
         "></div>`;
     const markerIcon = L.divIcon({
         className: '',
@@ -212,7 +218,7 @@ function updateMapOverlay() {
 }
 
 // ═══════════════════════════════════════════════
-//  CANVAS – SEVEN SEGMENT
+//  CANVAS – SEVEN SEGMENT (inverted colors)
 // ═══════════════════════════════════════════════
 const SEGS = {
     '0':[1,1,1,1,1,1,0],'1':[0,1,1,0,0,0,0],'2':[1,1,0,1,1,0,1],
@@ -224,7 +230,7 @@ const SEGS = {
 function fp(pts){ctx.beginPath();ctx.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)ctx.lineTo(pts[i],pts[i+1]);ctx.closePath();ctx.fill();}
 function dd(x,y,w,h,ch,sw,col){
     const seg=SEGS[ch]||SEGS[' '],p=sw*0.45;
-    ctx.fillStyle=col||'#111';
+    ctx.fillStyle=col||'#e0e0e0';
     if(seg[0])fp([x+p,y,x+w-p,y,x+w-p-sw,y+sw,x+p+sw,y+sw]);
     if(seg[1])fp([x+w,y+p,x+w,y+h/2-p,x+w-sw,y+h/2-p-sw*0.3,x+w-sw,y+p+sw]);
     if(seg[2])fp([x+w,y+h/2+p,x+w,y+h-p,x+w-sw,y+h-p-sw,x+w-sw,y+h/2+p+sw*0.3]);
@@ -233,7 +239,7 @@ function dd(x,y,w,h,ch,sw,col){
     if(seg[5])fp([x,y+p,x,y+h/2-p,x+sw,y+h/2-p-sw*0.3,x+sw,y+p+sw]);
     if(seg[6])fp([x+p+sw*0.3,y+h/2,x+p+sw,y+h/2-sw*0.45,x+w-p-sw,y+h/2-sw*0.45,x+w-p-sw*0.3,y+h/2,x+w-p-sw,y+h/2+sw*0.45,x+p+sw,y+h/2+sw*0.45]);
 }
-function dot(x,y,r,col){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=col||'#111';ctx.fill();}
+function dot(x,y,r,col){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=col||'#e0e0e0';ctx.fill();}
 function dn(str,x,y,dw,dh,sw,gap,col){
     let cx=x;
     for(let i=0;i<str.length;i++){
@@ -243,13 +249,13 @@ function dn(str,x,y,dw,dh,sw,gap,col){
     }
 }
 function tw(str,dw,sw,gap){let w=0;for(let i=0;i<str.length;i++)w+=str[i]==='.'?sw*1.2:dw+gap;return w-gap;}
-function lb(txt,x,y,sz,col,sp){ctx.fillStyle=col||'#999';ctx.font=`600 ${sz||9}px Arial`;ctx.letterSpacing=(sp||'2')+'px';ctx.fillText(txt,x,y);}
-function un(txt,x,y){ctx.fillStyle='#777';ctx.font='400 11px Arial';ctx.letterSpacing='0px';ctx.fillText(txt,x,y);}
+function lb(txt,x,y,sz,col,sp){ctx.fillStyle=col||'#666';ctx.font=`600 ${sz||9}px Arial`;ctx.letterSpacing=(sp||'2')+'px';ctx.fillText(txt,x,y);}
+function un(txt,x,y){ctx.fillStyle='#999';ctx.font='400 11px Arial';ctx.letterSpacing='0px';ctx.fillText(txt,x,y);}
 
 function draw() {
-    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
     const SP=H*0.60, HL=W*0.5;
-    ctx.fillStyle='#eee';
+    ctx.fillStyle='#ddd';
     ctx.fillRect(0,SP,W,0.5); ctx.fillRect(HL,0,0.5,SP);
     for(let i=1;i<4;i++) ctx.fillRect(W*i/5,SP,0.5,H-SP);
     ctx.fillRect(W*4/5,SP,0.5,H-SP);
@@ -257,24 +263,24 @@ function draw() {
     // RPM
     const DWB=58,DHB=106,SWB=11,GB=10;
     const rs=String(Math.round(data.rpm)),rw=tw(rs,DWB,SWB,GB),rx=(HL-rw)/2,ry=(SP-DHB)/2;
-    dn(rs,rx,ry,DWB,DHB,SWB,GB); lb('RPM',rx,ry-8,11,'#888','4');
+    dn(rs,rx,ry,DWB,DHB,SWB,GB); lb('RPM',rx,ry-8,11,'#777','4');
 
     // SPEED
     const ss=String(Math.round(data.spd)),sw2=tw(ss,DWB,SWB,GB),sx=HL+(HL-sw2)/2-24,sy=ry;
-    dn(ss,sx,sy,DWB,DHB,SWB,GB); un('km/h',sx+sw2+12,sy+DHB); lb('SPEED',sx,sy-8,11,'#888','4');
+    dn(ss,sx,sy,DWB,DHB,SWB,GB); un('km/h',sx+sw2+12,sy+DHB); lb('SPEED',sx,sy-8,11,'#777','4');
 
     // TOT / TRIP
     const DWK=12,DHK=22,SWK=2.6,GK=2,ty=sy+DHB+18;
-    ctx.fillStyle='#eee'; ctx.fillRect(HL+8,ty-6,HL-16,0.5);
+    ctx.fillStyle='#ddd'; ctx.fillRect(HL+8,ty-6,HL-16,0.5);
     const ts=Number(data.tot).toFixed(1),tw2=tw(ts,DWK,SWK,GK),tx=HL+12;
     dn(ts,tx,ty,DWK,DHK,SWK,GK);
-    ctx.fillStyle='#888'; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',tx+tw2+4,ty+DHK-1);
-    lb('TOT',tx,ty-4,7,'#999','1.5');
+    ctx.fillStyle='#999'; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',tx+tw2+4,ty+DHK-1);
+    lb('TOT',tx,ty-4,7,'#aaa','1.5');
     const tr=Number(data.trip).toFixed(1),trw=tw(tr,DWK,SWK,GK),trx=HL+HL/2+4;
     dn(tr,trx,ty,DWK,DHK,SWK,GK);
-    ctx.fillStyle='#888'; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',trx+trw+4,ty+DHK-1);
-    lb('TRIP',trx,ty-4,7,'#999','1.5');
-    ctx.fillStyle='#eee'; ctx.fillRect(HL+HL/2-2,ty,0.5,DHK+10);
+    ctx.fillStyle='#999'; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',trx+trw+4,ty+DHK-1);
+    lb('TRIP',trx,ty-4,7,'#aaa','1.5');
+    ctx.fillStyle='#ddd'; ctx.fillRect(HL+HL/2-2,ty,0.5,DHK+10);
 
     // BOTTOM PARAMS
     const DWS=19,DHS=40,SWS=4,GS=3,BY=SP+(H-SP-DHS)/2;
@@ -287,15 +293,15 @@ function draw() {
     params.forEach(({l,v,u},c)=>{
         const cw=W/5,cx=c*cw,vw=tw(v,DWS,SWS,GS),bx=cx+(cw-vw)/2-8;
         dn(v,bx,BY,DWS,DHS,SWS,GS);
-        ctx.fillStyle='#777'; ctx.font='400 11px Arial'; ctx.letterSpacing='0px'; ctx.fillText(u,bx+vw+5,BY+DHS);
-        ctx.fillStyle='#999'; ctx.font='600 9px Arial'; ctx.letterSpacing='2px'; ctx.fillText(l,bx,BY-9);
+        ctx.fillStyle='#999'; ctx.font='400 11px Arial'; ctx.letterSpacing='0px'; ctx.fillText(u,bx+vw+5,BY+DHS);
+        ctx.fillStyle='#777'; ctx.font='600 9px Arial'; ctx.letterSpacing='2px'; ctx.fillText(l,bx,BY-9);
     });
 
     // GEAR
     const DWG=32,DHG=54,SWG=7,gcx=W*4/5,gcw=W/5;
     const gs=String(data.gear),gw=tw(gs,DWG,SWG,0),gx=gcx+(gcw-gw)/2,gy=SP+(H-SP-DHG)/2;
     dn(gs,gx,gy,DWG,DHG,SWG,0);
-    ctx.fillStyle='#999'; ctx.font='600 9px Arial'; ctx.letterSpacing='2px'; ctx.fillText('GEAR',gx,gy-9);
+    ctx.fillStyle='#777'; ctx.font='600 9px Arial'; ctx.letterSpacing='2px'; ctx.fillText('GEAR',gx,gy-9);
 }
 
 function resizeAndDraw() {
