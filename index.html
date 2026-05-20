@@ -336,9 +336,9 @@ function initMap() {
                 mapMarker.setLatLng([lat, lng]);
             }
 
-            // Heading-up: rotate map
+            // Heading-up: rotate map with scale to fill screen
             if (headingUp && gpsHeading !== null) {
-                leafletMap.getContainer().style.transform = `rotate(${-gpsHeading}deg)`;
+                leafletMap.getContainer().style.transform = `rotate(${-gpsHeading}deg) scale(1.5)`;
                 leafletMap.getContainer().style.transformOrigin = '50% 50%';
             } else {
                 leafletMap.getContainer().style.transform = '';
