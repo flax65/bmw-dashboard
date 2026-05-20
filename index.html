@@ -30,7 +30,7 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 
 /* ── TURN INSTRUCTION BAR ── */
 #navBar{
-    position:fixed;top:38px;left:0;right:0;height:48px;
+    position:fixed;top:0;left:0;right:0;height:48px;
     background:rgba(0,0,0,0.88);
     display:none;align-items:center;gap:12px;
     padding:0 16px;z-index:590;
@@ -92,10 +92,14 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 #pi{position:fixed;top:6px;right:10px;font-size:13px;font-family:Arial;
     color:#444;z-index:1100;pointer-events:none;letter-spacing:4px;}
 
-/* Debug buttons top-left */
+/* Debug buttons top-left - only on page0 */
 #debugBtns{
     position:fixed;top:6px;left:10px;
     display:flex;gap:6px;z-index:1100;
+    transition: opacity 0.2s;
+}
+.mapActive #debugBtns{
+    display:none;
 }
 .dbtn{
     background:rgba(10,10,10,0.85);
@@ -187,8 +191,9 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 
     <!-- Map control buttons -->
     <div id="mapControls">
-        <button class="mctrl" id="btnNorth" title="Nord fisso / Heading up">N↑</button>
-        <button class="mctrl" id="btnZoom"  title="Zoom auto / manuale">AUTO</button>
+        <button class="mctrl" id="btnNextMap" title="Torna a dashboard">◀ DASH</button>
+        <button class="mctrl" id="btnNorth"   title="Nord fisso / Heading up">N↑</button>
+        <button class="mctrl" id="btnZoom"    title="Zoom auto / manuale">AUTO</button>
     </div>
 </div>
 
@@ -380,6 +385,11 @@ function initMap() {
 
     // Set initial zoom btn state
     document.getElementById('btnZoom').classList.add('active');
+
+    // Back to dashboard button
+    document.getElementById('btnNextMap').addEventListener('click', () => {
+        switchPage(0);
+    });
 }
 
 // ── Load route.json from GitHub Pages ──────────
