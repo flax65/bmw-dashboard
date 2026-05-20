@@ -1279,6 +1279,11 @@ function showStatus(msg, type) {
 function hideStatus() {
     document.getElementById('statusBar').className = '';
 }
+
+// ── PWA Service Worker ──
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw-planner.js').catch(() => {});
+}
 </script>
 </body>
 </html>
