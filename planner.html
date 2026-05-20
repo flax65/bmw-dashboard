@@ -472,6 +472,79 @@ html, body {
     color: var(--accent) !important;
 }
 .leaflet-control-attribution { display: none; }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 600px) {
+
+    html, body { overflow: auto; }
+
+    #app {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    /* Hide map on mobile - focus on inputs and steps */
+    #main {
+        display: flex;
+        flex-direction: column;
+        overflow: visible;
+    }
+
+    #sidebar {
+        width: 100%;
+        overflow: visible;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    /* Map shown below sidebar on mobile */
+    #map {
+        width: 100%;
+        height: 280px;
+        order: 2;
+    }
+
+    /* Steps list not too tall */
+    #stepsList {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    /* Bottom bar always visible */
+    #bottomBar {
+        position: sticky;
+        bottom: 0;
+        z-index: 500;
+        background: var(--panel);
+    }
+
+    #btnSave {
+        font-size: 13px;
+        padding: 12px;
+    }
+
+    #btnClear {
+        padding: 12px 12px;
+        font-size: 12px;
+    }
+
+    /* Status bar higher on mobile */
+    #statusBar {
+        bottom: 80px;
+    }
+
+    /* Settings modal full width */
+    #settingsBox {
+        width: 95vw;
+    }
+
+    /* Waypoints area */
+    #waypointsArea {
+        max-height: none;
+    }
+}
 </style>
 </head>
 <body>

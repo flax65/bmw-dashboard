@@ -401,7 +401,7 @@ async function loadRoute() {
 
 function drawRoute(route) {
     if (routeLayer) { routeLayer.remove(); routeLayer = null; }
-    navSteps   = [];
+    navSteps    = [];
     currentStep = 0;
 
     const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
@@ -416,7 +416,30 @@ function drawRoute(route) {
         });
     });
 
-    if (navSteps.length) showNavBar();
+    // Find nearest step to current GPS position
+    if (navSteps.length) {
+        currentStep = findNearestStep();
+        showNavBar();
+    }
+}
+
+function findNearestStep() {
+    if (!navSteps.length) return 0;
+    // If no GPS yet, start from beginning
+    const pos = mapMarker ? mapMarker.getLatLng() : null;
+    if (!pos) return 0;
+
+    let bestIdx  = 0;
+    let bestDist = Infinity;
+    navSteps.forEach((step, i) => {
+        const slat = step.maneuver.location[1];
+        const slng = step.maneuver.location[0];
+        const d    = haversine(pos.lat, pos.lng, slat, slng);
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+    });
+
+    // Don't jump past the last step
+    return Math.min(bestIdx, navSteps.length - 1);
 }
 
 // ── Navigation: find nearest step ──────────────
