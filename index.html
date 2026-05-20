@@ -90,6 +90,18 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 #pi{position:fixed;top:6px;right:10px;font-size:13px;font-family:Arial;
     color:#444;z-index:1000;pointer-events:none;letter-spacing:4px;}
 
+/* NEXT button */
+#btnNext{
+    position:fixed;top:6px;left:10px;
+    background:rgba(20,20,20,0.85);
+    border:1px solid #333;border-radius:4px;
+    color:#666;font-size:10px;font-family:Arial;
+    font-weight:700;letter-spacing:2px;
+    padding:5px 10px;cursor:pointer;
+    z-index:1000;transition:all 0.2s;
+}
+#btnNext:hover{border-color:#ffa500;color:#ffa500;}
+
 .ok{color:#22c55e!important;}
 .err{color:#f87171!important;}
 
@@ -153,6 +165,7 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 <!-- GLOBAL UI -->
 <div id="st">TAP TO CONNECT</div>
 <div id="pi">●○</div>
+<button id="btnNext">NEXT ▶</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -164,6 +177,9 @@ const CHARACTERISTIC_UUID = '5bc1a101-36e1-4b13-9bbf-8547cb834f11';
 const DEVICE_NAME         = 'BMW_R1100S_Dashboard';
 const NUM_PAGES           = 2;
 const W = 800, H = 360;
+
+// Theme: 'light' or 'dark'
+let theme = localStorage.getItem('dashTheme') || 'light';
 
 // ═══════════════════════════════════════════════
 //  STATE
@@ -476,9 +492,19 @@ function lb(txt,x,y,sz,col,sp){ctx.fillStyle=col||'#999';ctx.font=`600 ${sz||9}p
 function un(txt,x,y){ctx.fillStyle='#777';ctx.font='400 11px Arial';ctx.letterSpacing='0px';ctx.fillText(txt,x,y);}
 
 function draw() {
-    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+    // Theme colors
+    const BG   = theme === 'dark' ? '#000' : '#fff';
+    const LINE = theme === 'dark' ? '#222' : '#eee';
+    const DIG  = theme === 'dark' ? '#fff' : '#111';
+    const LBL  = theme === 'dark' ? '#555' : '#999';
+    const UNIT = theme === 'dark' ? '#444' : '#777';
+
+    // Update frame background
+    document.querySelector('.frame').style.background = BG;
+
+    ctx.fillStyle=BG; ctx.fillRect(0,0,W,H);
     const SP=H*0.60, HL=W*0.5;
-    ctx.fillStyle='#eee';
+    ctx.fillStyle=LINE;
     ctx.fillRect(0,SP,W,0.5); ctx.fillRect(HL,0,0.5,SP);
     for(let i=1;i<4;i++) ctx.fillRect(W*i/5,SP,0.5,H-SP);
     ctx.fillRect(W*4/5,SP,0.5,H-SP);
@@ -486,24 +512,26 @@ function draw() {
     // RPM
     const DWB=58,DHB=106,SWB=11,GB=10;
     const rs=String(Math.round(data.rpm)),rw=tw(rs,DWB,SWB,GB),rx=(HL-rw)/2,ry=(SP-DHB)/2;
-    dn(rs,rx,ry,DWB,DHB,SWB,GB); lb('RPM',rx,ry-8,11,'#888','4');
+    dn(rs,rx,ry,DWB,DHB,SWB,GB,DIG); lb('RPM',rx,ry-8,11,LBL,'4');
 
     // SPEED
     const ss=String(Math.round(data.spd)),sw2=tw(ss,DWB,SWB,GB),sx=HL+(HL-sw2)/2-24,sy=ry;
-    dn(ss,sx,sy,DWB,DHB,SWB,GB); un('km/h',sx+sw2+12,sy+DHB); lb('SPEED',sx,sy-8,11,'#888','4');
+    dn(ss,sx,sy,DWB,DHB,SWB,GB,DIG);
+    ctx.fillStyle=UNIT; ctx.font='400 11px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km/h',sx+sw2+12,sy+DHB);
+    lb('SPEED',sx,sy-8,11,LBL,'4');
 
     // TOT / TRIP
     const DWK=12,DHK=22,SWK=2.6,GK=2,ty=sy+DHB+18;
-    ctx.fillStyle='#eee'; ctx.fillRect(HL+8,ty-6,HL-16,0.5);
+    ctx.fillStyle=LINE; ctx.fillRect(HL+8,ty-6,HL-16,0.5);
     const ts=Number(data.tot).toFixed(1),tw2=tw(ts,DWK,SWK,GK),tx=HL+12;
-    dn(ts,tx,ty,DWK,DHK,SWK,GK);
-    ctx.fillStyle='#888'; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',tx+tw2+4,ty+DHK-1);
-    lb('TOT',tx,ty-4,7,'#999','1.5');
+    dn(ts,tx,ty,DWK,DHK,SWK,GK,DIG);
+    ctx.fillStyle=UNIT; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',tx+tw2+4,ty+DHK-1);
+    lb('TOT',tx,ty-4,7,LBL,'1.5');
     const tr=Number(data.trip).toFixed(1),trw=tw(tr,DWK,SWK,GK),trx=HL+HL/2+4;
-    dn(tr,trx,ty,DWK,DHK,SWK,GK);
-    ctx.fillStyle='#888'; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',trx+trw+4,ty+DHK-1);
-    lb('TRIP',trx,ty-4,7,'#999','1.5');
-    ctx.fillStyle='#eee'; ctx.fillRect(HL+HL/2-2,ty,0.5,DHK+10);
+    dn(tr,trx,ty,DWK,DHK,SWK,GK,DIG);
+    ctx.fillStyle=UNIT; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',trx+trw+4,ty+DHK-1);
+    lb('TRIP',trx,ty-4,7,LBL,'1.5');
+    ctx.fillStyle=LINE; ctx.fillRect(HL+HL/2-2,ty,0.5,DHK+10);
 
     // BOTTOM PARAMS
     const DWS=19,DHS=40,SWS=4,GS=3,BY=SP+(H-SP-DHS)/2;
@@ -515,16 +543,16 @@ function draw() {
     ];
     params.forEach(({l,v,u},c)=>{
         const cw=W/5,cx=c*cw,vw=tw(v,DWS,SWS,GS),bx=cx+(cw-vw)/2-8;
-        dn(v,bx,BY,DWS,DHS,SWS,GS);
-        ctx.fillStyle='#777'; ctx.font='400 11px Arial'; ctx.letterSpacing='0px'; ctx.fillText(u,bx+vw+5,BY+DHS);
-        ctx.fillStyle='#999'; ctx.font='600 9px Arial'; ctx.letterSpacing='2px'; ctx.fillText(l,bx,BY-9);
+        dn(v,bx,BY,DWS,DHS,SWS,GS,DIG);
+        ctx.fillStyle=UNIT; ctx.font='400 11px Arial'; ctx.letterSpacing='0px'; ctx.fillText(u,bx+vw+5,BY+DHS);
+        ctx.fillStyle=LBL;  ctx.font='600 9px Arial';  ctx.letterSpacing='2px'; ctx.fillText(l,bx,BY-9);
     });
 
     // GEAR
     const DWG=32,DHG=54,SWG=7,gcx=W*4/5,gcw=W/5;
     const gs=String(data.gear),gw=tw(gs,DWG,SWG,0),gx=gcx+(gcw-gw)/2,gy=SP+(H-SP-DHG)/2;
-    dn(gs,gx,gy,DWG,DHG,SWG,0);
-    ctx.fillStyle='#999'; ctx.font='600 9px Arial'; ctx.letterSpacing='2px'; ctx.fillText('GEAR',gx,gy-9);
+    dn(gs,gx,gy,DWG,DHG,SWG,0,DIG);
+    ctx.fillStyle=LBL; ctx.font='600 9px Arial'; ctx.letterSpacing='2px'; ctx.fillText('GEAR',gx,gy-9);
 }
 
 function resizeAndDraw() {
@@ -673,9 +701,16 @@ canvas.addEventListener('click', () => {
     if (!bleDevice?.gatt?.connected) connectBLE();
 });
 
-// Double-tap = fullscreen (fallback oltre alla PWA)
+// Double-tap canvas = toggle theme
 canvas.addEventListener('dblclick', () => {
-    document.documentElement.requestFullscreen?.();
+    theme = theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('dashTheme', theme);
+    draw();
+});
+
+// NEXT button = manual page switch
+document.getElementById('btnNext').addEventListener('click', () => {
+    switchPage((currentPage + 1) % NUM_PAGES);
 });
 
 // ═══════════════════════════════════════════════
