@@ -30,10 +30,10 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 
 /* ── TURN INSTRUCTION BAR ── */
 #navBar{
-    position:fixed;top:0;left:0;right:0;height:48px;
+    position:fixed;top:38px;left:0;right:0;height:48px;
     background:rgba(0,0,0,0.88);
     display:none;align-items:center;gap:12px;
-    padding:0 16px;z-index:600;
+    padding:0 16px;z-index:590;
     border-bottom:1px solid #222;
 }
 #navBar.show{display:flex;}
@@ -66,6 +66,7 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
     display:flex;flex-direction:column;gap:6px;
     z-index:600;
 }
+/* Push leaflet zoom above the data overlay */
 .mctrl{
     width:44px;height:44px;
     background:rgba(10,10,10,0.92);
@@ -89,12 +90,12 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 
 /* ── PAGE INDICATOR ── */
 #pi{position:fixed;top:6px;right:10px;font-size:13px;font-family:Arial;
-    color:#444;z-index:1000;pointer-events:none;letter-spacing:4px;}
+    color:#444;z-index:1100;pointer-events:none;letter-spacing:4px;}
 
 /* Debug buttons top-left */
 #debugBtns{
     position:fixed;top:6px;left:10px;
-    display:flex;gap:6px;z-index:1000;
+    display:flex;gap:6px;z-index:1100;
 }
 .dbtn{
     background:rgba(10,10,10,0.85);
@@ -123,7 +124,7 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 .err{color:#f87171!important;}
 
 /* Leaflet tweaks - zoom stays right side */
-.leaflet-control-zoom{border:none!important;margin-right:10px!important;margin-bottom:90px!important;}
+.leaflet-control-zoom{border:none!important;margin-right:10px!important;margin-bottom:80px!important;}
 .leaflet-control-zoom a{
     background:rgba(10,10,10,0.92)!important;color:#888!important;
     border:1px solid #333!important;width:44px!important;height:44px!important;
