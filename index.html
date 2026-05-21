@@ -283,6 +283,7 @@ let headingUp   = false;   // false = nord fisso
 let autoZoom    = true;    // true  = zoom automatico
 let zoomManTimer = null;   // timer ripristino auto-zoom
 let routeLayer  = null;    // polyline percorso
+let routeCoords = [];      // [[lat,lng],...] geometria completa
 let navSteps    = [];      // array step navigazione
 let currentStep = 0;       // step attuale
 let gpsSpeed    = 0;       // velocità GPS km/h
@@ -424,6 +425,7 @@ function drawRoute(route) {
     currentStep = 0;
 
     const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+    routeCoords = coords;
     routeLayer = L.polyline(coords, {
         color: '#ffa500', weight: 5, opacity: 0.8
     }).addTo(leafletMap);
@@ -438,7 +440,6 @@ function drawRoute(route) {
     // Find nearest step to current GPS position
     if (navSteps.length) {
         currentStep = findNearestStep();
-        showNavBar();
     }
 }
 
@@ -481,12 +482,8 @@ function updateNavigation(lat, lng) {
 
     const bar = document.getElementById('navBar');
 
-    // ── Off-route check: distanza minima da qualsiasi step ──
-    let minDistRoute = Infinity;
-    navSteps.forEach(s => {
-        const d = haversine(lat, lng, s.maneuver.location[1], s.maneuver.location[0]);
-        if (d < minDistRoute) minDistRoute = d;
-    });
+    // ── Off-route check: distanza dalla linea del percorso ──
+    const minDistRoute = distToPolyline(lat, lng, routeCoords);
 
     if (minDistRoute > OFFROUTE_DIST) {
         // FUORI ROTTA: mostra freccia direzionale verso step più vicino
@@ -532,6 +529,24 @@ function getBearing(lat1, lng1, lat2, lng2) {
 function bearingArrow(deg) {
     const dirs = ['↑','↗','→','↘','↓','↙','←','↖'];
     return dirs[Math.round(deg / 45) % 8];
+}
+
+// Distanza minima in metri dal punto [lat,lng] alla polilinea
+function distToPolyline(lat, lng, coords) {
+    if (!coords.length) return Infinity;
+    let minD = Infinity;
+    for (let i = 0; i < coords.length - 1; i++) {
+        const d = distToSegment(lat, lng, coords[i][0], coords[i][1], coords[i+1][0], coords[i+1][1]);
+        if (d < minD) minD = d;
+    }
+    return minD;
+}
+
+function distToSegment(plat, plng, alat, alng, blat, blng) {
+    const dx = blat - alat, dy = blng - alng;
+    if (dx === 0 && dy === 0) return haversine(plat, plng, alat, alng);
+    const t = Math.max(0, Math.min(1, ((plat-alat)*dx + (plng-alng)*dy) / (dx*dx + dy*dy)));
+    return haversine(plat, plng, alat + t*dx, alng + t*dy);
 }
 
 function showNavBar() {
