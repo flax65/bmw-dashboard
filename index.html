@@ -375,6 +375,13 @@ function initMap() {
     // Load route from GitHub if available
     loadRoute();
 
+    // Periodic off-route check (ogni 3s) in caso GPS lento o route caricata dopo GPS
+    setInterval(() => {
+        if (!mapMarker || !routeCoords.length) return;
+        const pos = mapMarker.getLatLng();
+        updateNavigation(pos.lat, pos.lng);
+    }, 3000);
+
     // Controls
     document.getElementById('btnNorth').addEventListener('click', () => {
         headingUp = !headingUp;
@@ -467,18 +474,7 @@ const APPROACH_DIST  = 250;  // mostra box entro questi metri dal waypoint
 const OFFROUTE_DIST  = 80;   // fuori rotta se > Xm dal percorso
 
 function updateNavigation(lat, lng) {
-    if (!navSteps.length) return;
-    if (currentStep >= navSteps.length) return;
-
-    const step = navSteps[currentStep];
-    const slat = step.maneuver.location[1];
-    const slng = step.maneuver.location[0];
-    const dist = haversine(lat, lng, slat, slng);
-
-    // Advance step if within 30m
-    if (dist < 30 && currentStep < navSteps.length - 1) {
-        currentStep++;
-    }
+    if (!navSteps.length || !routeCoords.length) return;
 
     const bar = document.getElementById('navBar');
 
@@ -503,7 +499,11 @@ function updateNavigation(lat, lng) {
 
     bar.classList.remove('offroute');
 
-    // ── Approccio waypoint: mostra box solo se < APPROACH_DIST ──
+    // Avanzamento step e approccio
+    if (currentStep >= navSteps.length) { bar.classList.remove('show'); return; }
+    const step = navSteps[currentStep];
+    const dist = haversine(lat, lng, step.maneuver.location[1], step.maneuver.location[0]);
+    if (dist < 30 && currentStep < navSteps.length - 1) currentStep++;
     if (dist <= APPROACH_DIST) {
         const next = navSteps[currentStep];
         bar.classList.add('show');
