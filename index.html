@@ -493,8 +493,9 @@ function updateNavigation(lat, lng) {
 
         const bearing = getBearing(lat, lng,
             nearest.s.maneuver.location[1], nearest.s.maneuver.location[0]);
+        const relBearing = (bearing - gpsHeading + 360) % 360;
         bar.classList.add('show', 'offroute');
-        setNavArrow(bearing);
+        setNavArrow(relBearing);
         document.getElementById('navText').textContent  = 'FUORI ROTTA';
         document.getElementById('navDist').textContent  = formatDist(minDistRoute);
         return;
