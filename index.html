@@ -28,26 +28,29 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 #page1{background:#0a0a0a;}
 #map{width:100%;height:100%;}
 
-/* ── NAV BOX (left square) ── */
+/* ── NAV BOX (left, clear of buttons) ── */
 #navBar{
-    position:fixed;top:50%;left:10px;transform:translateY(-50%);
-    width:110px;height:110px;
+    position:fixed;top:50%;left:64px;transform:translateY(-50%);
+    width:140px;height:140px;
     background:rgba(10,10,10,0.92);
     border:2px solid #ffa500;border-radius:10px;
     display:none;flex-direction:column;align-items:center;justify-content:center;
-    gap:4px;z-index:590;
+    gap:6px;z-index:590;
     box-shadow:0 4px 20px rgba(255,165,0,0.25);
-    padding:8px;
+    padding:10px;
 }
 #navBar.show{display:flex;}
 #navBar.offroute{border-color:#f87171;box-shadow:0 4px 20px rgba(248,113,113,0.3);}
-#navArrow{font-size:42px;line-height:1;color:#ffa500;}
+#navArrow{
+    font-size:54px;line-height:1;color:#ffa500;
+    display:inline-block;transition:transform 0.3s;
+}
 #navBar.offroute #navArrow{color:#f87171;}
-#navText{font-family:Arial;font-size:9px;font-weight:600;color:#ccc;
+#navText{font-family:Arial;font-size:10px;font-weight:600;color:#ccc;
     text-align:center;width:100%;overflow:hidden;
     text-overflow:ellipsis;white-space:nowrap;letter-spacing:0.5px;}
-#navDist{font-family:Arial;font-size:14px;font-weight:700;color:#ffa500;letter-spacing:1px;}
-#navBar.offroute #navDist{color:#f87171;font-size:9px;}
+#navDist{font-family:Arial;font-size:16px;font-weight:700;color:#ffa500;letter-spacing:1px;}
+#navBar.offroute #navDist{color:#f87171;font-size:11px;}
 
 /* ── DATA OVERLAY (bottom) ── */
 #mapOverlay{
@@ -491,7 +494,7 @@ function updateNavigation(lat, lng) {
         const bearing = getBearing(lat, lng,
             nearest.s.maneuver.location[1], nearest.s.maneuver.location[0]);
         bar.classList.add('show', 'offroute');
-        document.getElementById('navArrow').textContent = bearingArrow(bearing);
+        setNavArrow(bearing);
         document.getElementById('navText').textContent  = 'FUORI ROTTA';
         document.getElementById('navDist').textContent  = formatDist(minDistRoute);
         return;
@@ -507,8 +510,7 @@ function updateNavigation(lat, lng) {
     if (dist <= APPROACH_DIST) {
         const next = navSteps[currentStep];
         bar.classList.add('show');
-        document.getElementById('navArrow').textContent =
-            maneuverArrow(next.maneuver.type, next.maneuver.modifier);
+        setNavArrow(maneuverDeg(next.maneuver.type, next.maneuver.modifier));
         document.getElementById('navText').textContent =
             next.name || formatManeuver(next.maneuver.type, next.maneuver.modifier);
         document.getElementById('navDist').textContent = formatDist(dist);
@@ -526,9 +528,25 @@ function getBearing(lat1, lng1, lat2, lng2) {
     return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
 
+function setNavArrow(deg) {
+    document.getElementById('navArrow').textContent = '▲';
+    document.getElementById('navArrow').style.transform = `rotate(${deg}deg)`;
+}
+
+function maneuverDeg(type, mod) {
+    if (type === 'arrive')    return 0;
+    if (type === 'depart')    return 0;
+    if (type === 'roundabout' || type === 'rotary') return 45;
+    const map = {
+        'straight': 0, 'slight right': 30, 'right': 90, 'sharp right': 135,
+        'uturn': 180, 'sharp left': 225, 'left': 270, 'slight left': 330
+    };
+    return map[mod] !== undefined ? map[mod] : 0;
+}
+
 function bearingArrow(deg) {
-    const dirs = ['↑','↗','→','↘','↓','↙','←','↖'];
-    return dirs[Math.round(deg / 45) % 8];
+    // kept for compatibility — now sets triangle rotation
+    setNavArrow(deg);
 }
 
 // Distanza minima in metri dal punto [lat,lng] alla polilinea
