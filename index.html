@@ -28,18 +28,26 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 #page1{background:#0a0a0a;}
 #map{width:100%;height:100%;}
 
-/* ── TURN INSTRUCTION BAR ── */
+/* ── NAV BOX (left square) ── */
 #navBar{
-    position:fixed;top:0;left:0;right:0;height:48px;
-    background:rgba(0,0,0,0.88);
-    display:none;align-items:center;gap:12px;
-    padding:0 16px;z-index:590;
-    border-bottom:1px solid #222;
+    position:fixed;top:50%;left:10px;transform:translateY(-50%);
+    width:110px;height:110px;
+    background:rgba(10,10,10,0.92);
+    border:2px solid #ffa500;border-radius:10px;
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    gap:4px;z-index:590;
+    box-shadow:0 4px 20px rgba(255,165,0,0.25);
+    padding:8px;
 }
 #navBar.show{display:flex;}
-#navArrow{font-size:28px;line-height:1;flex-shrink:0;}
-#navText{font-family:Arial;font-size:14px;font-weight:600;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#navDist{font-family:Arial;font-size:20px;font-weight:700;color:#ffa500;flex-shrink:0;letter-spacing:1px;}
+#navBar.offroute{border-color:#f87171;box-shadow:0 4px 20px rgba(248,113,113,0.3);}
+#navArrow{font-size:42px;line-height:1;color:#ffa500;}
+#navBar.offroute #navArrow{color:#f87171;}
+#navText{font-family:Arial;font-size:9px;font-weight:600;color:#ccc;
+    text-align:center;width:100%;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;letter-spacing:0.5px;}
+#navDist{font-family:Arial;font-size:14px;font-weight:700;color:#ffa500;letter-spacing:1px;}
+#navBar.offroute #navDist{color:#f87171;font-size:9px;}
 
 /* ── DATA OVERLAY (bottom) ── */
 #mapOverlay{
@@ -279,8 +287,6 @@ let navSteps    = [];      // array step navigazione
 let currentStep = 0;       // step attuale
 let gpsSpeed    = 0;       // velocità GPS km/h
 let gpsHeading  = 0;       // direzione GPS gradi
-let routeCoords = [];      // coordinate flat percorso
-let reconnectLayer = null; // linea off-route
 
 const markerHtml = `<div style="
     width:20px;height:20px;background:#ffa500;
@@ -320,8 +326,50 @@ function initMap() {
         }, 10000);
     });
 
-    // Start GPS (condiviso page0 + page1)
-    startGPS();
+    // Watch GPS
+    if ('geolocation' in navigator) {
+        watchId = navigator.geolocation.watchPosition(pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            gpsSpeed   = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
+            gpsHeading = pos.coords.heading || 0;
+
+            // Update speed display (GPS)
+            document.getElementById('mapSpd').textContent = Math.round(gpsSpeed);
+
+            // Marker
+            if (!mapMarker) {
+                mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(leafletMap);
+            } else {
+                mapMarker.setLatLng([lat, lng]);
+            }
+
+            // Heading-up: rotate map with scale to fill screen
+            if (headingUp && gpsHeading !== null) {
+                leafletMap.getContainer().style.transform = `rotate(${-gpsHeading}deg) scale(1.5)`;
+                leafletMap.getContainer().style.transformOrigin = '50% 50%';
+            } else {
+                leafletMap.getContainer().style.transform = '';
+            }
+
+            // Auto-zoom by speed
+            if (autoZoom) {
+                let z = 16;
+                if      (gpsSpeed > 130) z = 12;
+                else if (gpsSpeed > 90)  z = 13;
+                else if (gpsSpeed > 50)  z = 14;
+                else if (gpsSpeed > 10)  z = 15;
+                if (leafletMap.getZoom() !== z)
+                    leafletMap.setZoom(z, { animate: true });
+            }
+
+            leafletMap.panTo([lat, lng], { animate: true, duration: 0.5 });
+
+            // Navigation: find next step
+            updateNavigation(lat, lng);
+
+        }, null, { enableHighAccuracy: true, maximumAge: 1000 });
+    }
 
     // Load route from GitHub if available
     loadRoute();
@@ -376,8 +424,6 @@ function drawRoute(route) {
     currentStep = 0;
 
     const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
-    routeCoords = coords;
-    if (reconnectLayer) { reconnectLayer.remove(); reconnectLayer = null; }
     routeLayer = L.polyline(coords, {
         color: '#ffa500', weight: 5, opacity: 0.8
     }).addTo(leafletMap);
@@ -415,7 +461,10 @@ function findNearestStep() {
     return Math.min(bestIdx, navSteps.length - 1);
 }
 
-// ── Navigation: find nearest step ──────────────
+// ── Navigation: approach + off-route ──────────
+const APPROACH_DIST  = 250;  // mostra box entro questi metri dal waypoint
+const OFFROUTE_DIST  = 80;   // fuori rotta se > Xm dal percorso
+
 function updateNavigation(lat, lng) {
     if (!navSteps.length) return;
     if (currentStep >= navSteps.length) return;
@@ -430,13 +479,59 @@ function updateNavigation(lat, lng) {
         currentStep++;
     }
 
-    // Show next step info
-    const next = navSteps[currentStep];
-    document.getElementById('navArrow').textContent =
-        maneuverArrow(next.maneuver.type, next.maneuver.modifier);
-    document.getElementById('navText').textContent =
-        next.name || formatManeuver(next.maneuver.type, next.maneuver.modifier);
-    document.getElementById('navDist').textContent = formatDist(dist);
+    const bar = document.getElementById('navBar');
+
+    // ── Off-route check: distanza minima da qualsiasi step ──
+    let minDistRoute = Infinity;
+    navSteps.forEach(s => {
+        const d = haversine(lat, lng, s.maneuver.location[1], s.maneuver.location[0]);
+        if (d < minDistRoute) minDistRoute = d;
+    });
+
+    if (minDistRoute > OFFROUTE_DIST) {
+        // FUORI ROTTA: mostra freccia direzionale verso step più vicino
+        const nearest = navSteps.reduce((best, s) => {
+            const d = haversine(lat, lng, s.maneuver.location[1], s.maneuver.location[0]);
+            return d < best.d ? { d, s } : best;
+        }, { d: Infinity, s: navSteps[0] });
+
+        const bearing = getBearing(lat, lng,
+            nearest.s.maneuver.location[1], nearest.s.maneuver.location[0]);
+        bar.classList.add('show', 'offroute');
+        document.getElementById('navArrow').textContent = bearingArrow(bearing);
+        document.getElementById('navText').textContent  = 'FUORI ROTTA';
+        document.getElementById('navDist').textContent  = formatDist(minDistRoute);
+        return;
+    }
+
+    bar.classList.remove('offroute');
+
+    // ── Approccio waypoint: mostra box solo se < APPROACH_DIST ──
+    if (dist <= APPROACH_DIST) {
+        const next = navSteps[currentStep];
+        bar.classList.add('show');
+        document.getElementById('navArrow').textContent =
+            maneuverArrow(next.maneuver.type, next.maneuver.modifier);
+        document.getElementById('navText').textContent =
+            next.name || formatManeuver(next.maneuver.type, next.maneuver.modifier);
+        document.getElementById('navDist').textContent = formatDist(dist);
+    } else {
+        bar.classList.remove('show');
+    }
+}
+
+function getBearing(lat1, lng1, lat2, lng2) {
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const y = Math.sin(dLng) * Math.cos(φ2);
+    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(dLng);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function bearingArrow(deg) {
+    const dirs = ['↑','↗','→','↘','↓','↙','←','↖'];
+    return dirs[Math.round(deg / 45) % 8];
 }
 
 function showNavBar() {
@@ -550,7 +645,7 @@ function draw() {
     dn(rs,rx,ry,DWB,DHB,SWB,GB,DIG); lb('RPM',rx,ry-8,11,LBL,'4');
 
     // SPEED
-    const ss=String(Math.round(gpsSpeed)),sw2=tw(ss,DWB,SWB,GB),sx=HL+(HL-sw2)/2-24,sy=ry;
+    const ss=String(Math.round(data.spd)),sw2=tw(ss,DWB,SWB,GB),sx=HL+(HL-sw2)/2-24,sy=ry;
     dn(ss,sx,sy,DWB,DHB,SWB,GB,DIG);
     ctx.fillStyle=UNIT; ctx.font='400 11px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km/h',sx+sw2+12,sy+DHB);
     lb('SPEED',sx,sy-8,11,LBL,'4');
@@ -607,81 +702,6 @@ window.addEventListener('orientationchange', () => {
     setTimeout(resizeAndDraw, 100);
     setTimeout(resizeAndDraw, 400);
 });
-
-// ── GPS condiviso (page 0 speed + page 1 nav) ──
-function startGPS() {
-    if (watchId !== null) return;
-    if (!('geolocation' in navigator)) return;
-    watchId = navigator.geolocation.watchPosition(pos => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        gpsSpeed   = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
-        gpsHeading = pos.coords.heading || 0;
-
-        // Page 0: aggiorna velocità sul dashboard
-        if (currentPage === 0) draw();
-
-        // Page 1: aggiorna mappa
-        if (currentPage === 1 && leafletMap) {
-            document.getElementById('mapSpd').textContent = Math.round(gpsSpeed);
-
-            if (!mapMarker) {
-                mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(leafletMap);
-            } else {
-                mapMarker.setLatLng([lat, lng]);
-            }
-
-            if (headingUp && gpsHeading !== null) {
-                leafletMap.getContainer().style.transform = `rotate(${-gpsHeading}deg) scale(1.5)`;
-                leafletMap.getContainer().style.transformOrigin = '50% 50%';
-            } else {
-                leafletMap.getContainer().style.transform = '';
-            }
-
-            if (autoZoom) {
-                let z = 16;
-                if      (gpsSpeed > 130) z = 12;
-                else if (gpsSpeed > 90)  z = 13;
-                else if (gpsSpeed > 50)  z = 14;
-                else if (gpsSpeed > 10)  z = 15;
-                if (leafletMap.getZoom() !== z)
-                    leafletMap.setZoom(z, { animate: true });
-            }
-
-            leafletMap.panTo([lat, lng], { animate: true, duration: 0.5 });
-            updateNavigation(lat, lng);
-            updateReconnectLine(lat, lng);
-        }
-    }, err => {
-        console.warn('GPS error', err);
-    }, { enableHighAccuracy: true, maximumAge: 1000 });
-}
-
-function updateReconnectLine(lat, lng) {
-    if (!routeCoords.length || !navSteps.length || !leafletMap) {
-        if (reconnectLayer) { reconnectLayer.remove(); reconnectLayer = null; }
-        return;
-    }
-    let minDist = Infinity;
-    for (const c of routeCoords) {
-        const d = haversine(lat, lng, c[0], c[1]);
-        if (d < minDist) minDist = d;
-    }
-    if (minDist > 150) {
-        const step = navSteps[currentStep];
-        const slat = step.maneuver.location[1];
-        const slng = step.maneuver.location[0];
-        if (!reconnectLayer) {
-            reconnectLayer = L.polyline([[lat, lng], [slat, slng]], {
-                color: '#4af', weight: 2, dashArray: '8,6', opacity: 0.8
-            }).addTo(leafletMap);
-        } else {
-            reconnectLayer.setLatLngs([[lat, lng], [slat, slng]]);
-        }
-    } else {
-        if (reconnectLayer) { reconnectLayer.remove(); reconnectLayer = null; }
-    }
-}
 
 // ═══════════════════════════════════════════════
 //  BLE – CONNECTION
@@ -799,8 +819,6 @@ window.addEventListener('load', async () => {
     setTimeout(resizeAndDraw, 100);
     setTimeout(resizeAndDraw, 300);
     setTimeout(resizeAndDraw, 800);
-
-    startGPS();
 
     const device = await tryKnownDevice();
     if (device) {
