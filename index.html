@@ -28,56 +28,74 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 #page1{background:#0a0a0a;}
 #map{width:100%;height:100%;}
 
-/* ── NAV BOX (left, clear of buttons) ── */
-#navBar{
-    position:fixed;top:50%;left:64px;transform:translateY(-50%);
-    width:140px;height:140px;
-    background:rgba(10,10,10,0.92);
-    border:2px solid #ffa500;border-radius:10px;
-    display:none;flex-direction:column;align-items:center;justify-content:center;
-    gap:6px;z-index:590;
-    box-shadow:0 4px 20px rgba(255,165,0,0.25);
-    padding:10px;
+/* ── PAGE 1 LAYOUT: map left, panel right ── */
+#page1{
+    display:grid;
+    grid-template-columns:1fr 160px;
+    grid-template-rows:1fr;
+    background:#0a0a0a;
 }
-#navBar.show{display:flex;}
-#navBar.offroute{border-color:#f87171;box-shadow:0 4px 20px rgba(248,113,113,0.3);}
+#map{
+    grid-column:1;grid-row:1;
+    width:100%;height:100%;
+}
+
+/* ── RIGHT PANEL ── */
+#rightPanel{
+    grid-column:2;grid-row:1;
+    display:flex;flex-direction:column;
+    background:#0a0a0a;
+    border-left:1px solid #222;
+}
+
+/* ── NAV BOX: square, full panel width ── */
+#navBar{
+    width:160px;height:160px;
+    flex-shrink:0;
+    background:#111;
+    border-bottom:2px solid #ffa500;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:6px;padding:10px;
+}
+#navBar.offroute{border-bottom-color:#f87171;}
 #navArrow{
-    font-size:54px;line-height:1;color:#ffa500;
+    font-size:64px;line-height:1;color:#ffa500;
     display:inline-block;transition:transform 0.3s;
 }
 #navBar.offroute #navArrow{color:#f87171;}
-#navText{font-family:Arial;font-size:10px;font-weight:600;color:#ccc;
+#navText{font-family:Arial;font-size:9px;font-weight:600;color:#ccc;
     text-align:center;width:100%;overflow:hidden;
     text-overflow:ellipsis;white-space:nowrap;letter-spacing:0.5px;}
-#navDist{font-family:Arial;font-size:16px;font-weight:700;color:#ffa500;letter-spacing:1px;}
-#navBar.offroute #navDist{color:#f87171;font-size:11px;}
+#navDist{font-family:Arial;font-size:15px;font-weight:700;color:#ffa500;letter-spacing:1px;}
+#navBar.offroute #navDist{color:#f87171;font-size:10px;}
 
-/* ── DATA OVERLAY (bottom) ── */
+/* ── DATA PANEL: fills rest of right column ── */
 #mapOverlay{
-    position:fixed;bottom:0;left:0;right:0;
-    background:rgba(0,0,0,0.88);
-    display:flex;align-items:stretch;
-    z-index:500;pointer-events:none;
-    border-top:1px solid #222;
+    flex:1;
+    display:flex;flex-direction:column;
+    background:rgba(0,0,0,0.95);
+    border-top:none;
+    padding:4px 0;
 }
 .mdata{
-    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:6px 4px;border-right:1px solid #1a1a1a;
+    flex:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:4px;border-bottom:1px solid #1a1a1a;
 }
-.mdata:last-child{border-right:none;}
+.mdata:last-child{border-bottom:none;}
 .mdata-val{font-family:Arial;font-weight:700;color:#fff;line-height:1;}
-.mdata-lbl{font-family:Arial;font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;}
-.mdata-val.big{font-size:28px;color:#ffa500;}
-.mdata-val.med{font-size:18px;}
-.mdata-val.sml{font-size:14px;color:#aaa;}
+.mdata-lbl{font-family:Arial;font-size:7px;color:#555;letter-spacing:2px;margin-top:2px;}
+.mdata-val.big{font-size:26px;color:#ffa500;}
+.mdata-val.med{font-size:17px;}
+.mdata-val.sml{font-size:13px;color:#aaa;}
 
-/* ── MAP CONTROLS (overlay buttons) ── */
+/* ── MAP CONTROLS: bottom-left of map area ── */
 #mapControls{
-    position:fixed;left:10px;bottom:90px;
+    position:fixed;left:10px;bottom:10px;
     display:flex;flex-direction:column;gap:6px;
     z-index:600;
 }
-/* Push leaflet zoom above the data overlay */
 .mctrl{
     width:44px;height:44px;
     background:rgba(10,10,10,0.92);
@@ -94,7 +112,7 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 /* ── STATUS BAR (global) ── */
 #st{position:fixed;bottom:4px;right:8px;font-size:11px;font-family:Arial;
     color:#ffa500;letter-spacing:1px;font-weight:bold;z-index:1000;pointer-events:none;}
-.mapActive #st{bottom:80px;}
+.mapActive #st{display:none;}
 
 /* Route polyline shown on map */
 .leaflet-control-zoom{margin-bottom:4px!important;}
@@ -138,8 +156,8 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 .ok{color:#22c55e!important;}
 .err{color:#f87171!important;}
 
-/* Leaflet tweaks - zoom stays right side */
-.leaflet-control-zoom{border:none!important;margin-right:10px!important;margin-bottom:80px!important;}
+/* Leaflet tweaks */
+.leaflet-control-zoom{border:none!important;margin-right:10px!important;margin-bottom:10px!important;}
 .leaflet-control-zoom a{
     background:rgba(10,10,10,0.92)!important;color:#888!important;
     border:1px solid #333!important;width:44px!important;height:44px!important;
@@ -162,34 +180,36 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 <div class="page" id="page1">
     <div id="map"></div>
 
-    <!-- Turn instruction -->
-    <div id="navBar">
-        <div id="navArrow">↑</div>
-        <div id="navText">In rotta</div>
-        <div id="navDist"></div>
-    </div>
+    <div id="rightPanel">
+        <!-- Nav box -->
+        <div id="navBar">
+            <div id="navArrow">▲</div>
+            <div id="navText">In rotta</div>
+            <div id="navDist"></div>
+        </div>
 
-    <!-- Data overlay bottom -->
-    <div id="mapOverlay">
-        <div class="mdata">
-            <div class="mdata-val big" id="mapSpd">0</div>
-            <div class="mdata-lbl">km/h</div>
-        </div>
-        <div class="mdata">
-            <div class="mdata-val med" id="mapGear">-</div>
-            <div class="mdata-lbl">GEAR</div>
-        </div>
-        <div class="mdata">
-            <div class="mdata-val sml" id="mapRpm">0</div>
-            <div class="mdata-lbl">RPM</div>
-        </div>
-        <div class="mdata">
-            <div class="mdata-val sml" id="mapClt">0.0</div>
-            <div class="mdata-lbl">°C CLT</div>
-        </div>
-        <div class="mdata">
-            <div class="mdata-val sml" id="mapBat">0.00</div>
-            <div class="mdata-lbl">V BAT</div>
+        <!-- Data panel -->
+        <div id="mapOverlay">
+            <div class="mdata">
+                <div class="mdata-val big" id="mapSpd">0</div>
+                <div class="mdata-lbl">km/h</div>
+            </div>
+            <div class="mdata">
+                <div class="mdata-val med" id="mapGear">-</div>
+                <div class="mdata-lbl">GEAR</div>
+            </div>
+            <div class="mdata">
+                <div class="mdata-val sml" id="mapRpm">0</div>
+                <div class="mdata-lbl">RPM</div>
+            </div>
+            <div class="mdata">
+                <div class="mdata-val sml" id="mapClt">0.0</div>
+                <div class="mdata-lbl">°C CLT</div>
+            </div>
+            <div class="mdata">
+                <div class="mdata-val sml" id="mapBat">0.00</div>
+                <div class="mdata-lbl">V BAT</div>
+            </div>
         </div>
     </div>
 
@@ -288,6 +308,8 @@ let zoomManTimer = null;   // timer ripristino auto-zoom
 let routeLayer  = null;    // polyline percorso
 let routeCoords = [];      // [[lat,lng],...] geometria completa
 let navSteps    = [];      // array step navigazione
+let offRouteLayer  = null; // polyline traccia fuori rotta
+let offRoutePoints = [];   // punti raccolti fuori rotta
 let currentStep = 0;       // step attuale
 let gpsSpeed    = 0;       // velocità GPS km/h
 let gpsHeading  = 0;       // direzione GPS gradi
@@ -472,42 +494,50 @@ function findNearestStep() {
     return Math.min(bestIdx, navSteps.length - 1);
 }
 
-// ── Navigation: approach + off-route ──────────
-const APPROACH_DIST  = 250;  // mostra box entro questi metri dal waypoint
-const OFFROUTE_DIST  = 80;   // fuori rotta se > Xm dal percorso
+// ── Navigation: adaptive lookahead + off-route track ──
+const OFFROUTE_DIST = 80;
+
+function getApproachDist(speedKmh) {
+    if (speedKmh > 100) return 500;
+    if (speedKmh > 70)  return 350;
+    if (speedKmh > 30)  return 200;
+    return 100;
+}
 
 function updateNavigation(lat, lng) {
     if (!navSteps.length || !routeCoords.length) return;
 
     const bar = document.getElementById('navBar');
-
-    // ── Off-route check: distanza dalla linea del percorso ──
     const minDistRoute = distToPolyline(lat, lng, routeCoords);
 
     if (minDistRoute > OFFROUTE_DIST) {
-        // FUORI ROTTA: mostra freccia direzionale verso step più vicino
-        const nearest = navSteps.reduce((best, s) => {
-            const d = haversine(lat, lng, s.maneuver.location[1], s.maneuver.location[0]);
-            return d < best.d ? { d, s } : best;
-        }, { d: Infinity, s: navSteps[0] });
+        // ── FUORI ROTTA: traccia rossa, nascondi box ──
+        bar.classList.remove('show');
 
-        const bearing = getBearing(lat, lng,
-            nearest.s.maneuver.location[1], nearest.s.maneuver.location[0]);
-        const relBearing = (bearing - gpsHeading + 360) % 360;
-        bar.classList.add('show', 'offroute');
-        setNavArrow(relBearing);
-        document.getElementById('navText').textContent  = 'FUORI ROTTA';
-        document.getElementById('navDist').textContent  = formatDist(minDistRoute);
+        offRoutePoints.push([lat, lng]);
+        if (!offRouteLayer) {
+            offRouteLayer = L.polyline(offRoutePoints, {
+                color: '#f87171', weight: 3, opacity: 0.9, dashArray: '6,4'
+            }).addTo(leafletMap);
+        } else {
+            offRouteLayer.setLatLngs(offRoutePoints);
+        }
         return;
     }
 
-    bar.classList.remove('offroute');
+    // ── IN ROTTA: azzera traccia fuori rotta ──
+    if (offRouteLayer) { offRouteLayer.remove(); offRouteLayer = null; }
+    offRoutePoints = [];
 
-    // Avanzamento step e approccio
+    // Avanzamento step
     if (currentStep >= navSteps.length) { bar.classList.remove('show'); return; }
     const step = navSteps[currentStep];
     const dist = haversine(lat, lng, step.maneuver.location[1], step.maneuver.location[0]);
     if (dist < 30 && currentStep < navSteps.length - 1) currentStep++;
+
+    // Lookahead adattivo alla velocità
+    const APPROACH_DIST = getApproachDist(gpsSpeed);
+
     if (dist <= APPROACH_DIST) {
         const next = navSteps[currentStep];
         bar.classList.add('show');
