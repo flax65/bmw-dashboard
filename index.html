@@ -317,16 +317,10 @@ function initMap() {
 
     markerIcon = L.divIcon({
         className:'',
-        html:`<div style="
-            width:0;height:0;
-            border-left:10px solid transparent;
-            border-right:10px solid transparent;
-            border-bottom:22px solid #ffa500;
-            filter:drop-shadow(0 0 6px rgba(255,165,0,0.9));
-            transform-origin:50% 50%;
-            transform:rotate(0deg);
-        "></div>`,
-        iconSize:[20,22], iconAnchor:[10,11]
+        html:`<svg width="24" height="32" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible;">
+            <polygon points="12,0 24,28 12,22 0,28" fill="#ffa500" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+        </svg>`,
+        iconSize:[24,32], iconAnchor:[12,16]
     });
 
     leafletMap = L.map('map', {
@@ -378,7 +372,10 @@ function initMap() {
             // Ruota la freccia nel senso di marcia (usa lastKnownHeading)
             if (mapMarker) {
                 const el = mapMarker.getElement();
-                if (el) el.firstChild.style.transform = `rotate(${lastKnownHeading}deg)`;
+                if (el) {
+                    const svg = el.querySelector('svg');
+                    if (svg) svg.style.transform = `rotate(${lastKnownHeading}deg)`;
+                }
             }
 
             // Heading-up: rotate map with scale to fill screen
