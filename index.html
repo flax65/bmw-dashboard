@@ -28,6 +28,9 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 /* PAGE 1 - MAP fullscreen */
 #page1{background:#0a0a0a;}
 #map{position:absolute;top:0;left:0;right:0;bottom:0;}
+#map.headingUp{
+    top:-50%;left:-50%;right:-50%;bottom:-50%;
+}
 
 /* NAV BANNER - overlay top, hidden by default */
 #navBanner{
@@ -221,7 +224,7 @@ function initMap() {
                   .setView([45.65, 13.77], 15);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom:19, subdomains:'abcd'
+        maxZoom:19, subdomains:'abcd', keepBuffer:6
     }).addTo(leafletMap);
 
     const markerIcon = L.divIcon({ className:'', html:markerHtml, iconSize:[20,20], iconAnchor:[10,10] });
@@ -256,10 +259,12 @@ function initMap() {
             }
 
             if (headingUp && gpsHeading !== null) {
-                leafletMap.getContainer().style.transform = `rotate(${-gpsHeading}deg) scale(1.5)`;
+                leafletMap.getContainer().style.transform = `rotate(${-gpsHeading}deg)`;
                 leafletMap.getContainer().style.transformOrigin = '50% 50%';
+                leafletMap.invalidateSize();
             } else {
                 leafletMap.getContainer().style.transform = '';
+                leafletMap.invalidateSize();
             }
 
             if (autoZoom) {
@@ -290,7 +295,9 @@ function initMap() {
         const btn = document.getElementById('btnNorth');
         btn.textContent = headingUp ? 'HDG' : 'N↑';
         btn.classList.toggle('active', headingUp);
+        document.getElementById('map').classList.toggle('headingUp', headingUp);
         if (!headingUp) leafletMap.getContainer().style.transform = '';
+        leafletMap.invalidateSize();
     });
 
     document.getElementById('btnZoom').addEventListener('click', () => {
