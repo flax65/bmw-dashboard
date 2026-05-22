@@ -18,81 +18,99 @@ html,body{width:100%;height:100%;background:#111;overflow:hidden;}
 .page{width:100%;height:100%;display:none;position:fixed;top:0;left:0;}
 .page.active{display:block;}
 
-/* Page 0 – Dashboard */
-#page0{display:none;background:#111;}
-#page0.active{display:block;}
+/* ── PAGE 0: DASHBOARD ── */
+#page0{background:#111;}
 .frame{position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;overflow:hidden;}
 canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 
-/* Page 1 – Map */
-#page1{background:#0a0a0a;}
-#map{width:100%;height:100%;}
-
-/* ── PAGE 1 LAYOUT: map left, panel right ── */
+/* ── PAGE 1: MAP LAYOUT ──
+   ┌──────────────┬────────┐
+   │              │ NAVBOX │
+   │     MAP      │ square │
+   │              ├────────┤  <- data bar bottom
+   └──────────────┴────────┘
+   Data bar spans full width at bottom
+   Navbox: right edge = screen right, side = data bar height subtracted
+*/
 #page1{
-    display:grid;
-    grid-template-columns:1fr 160px;
-    grid-template-rows:1fr;
+    position:relative;
     background:#0a0a0a;
 }
+
+/* Map fills entire page, data bar and navbox sit on top */
 #map{
-    grid-column:1;grid-row:1;
-    width:100%;height:100%;
+    position:absolute;
+    top:0;left:0;
+    /* right edge stops before navbox */
+    right:var(--nav-size, 150px);
+    /* bottom stops above data bar */
+    bottom:var(--bar-h, 66px);
 }
 
-/* ── RIGHT PANEL ── */
-#rightPanel{
-    grid-column:2;grid-row:1;
-    display:flex;flex-direction:column;
-    background:#0a0a0a;
-    border-left:1px solid #222;
-}
-
-/* ── NAV BOX: square, full panel width ── */
-#navBar{
-    width:160px;height:160px;
-    flex-shrink:0;
+/* ── NAV BOX ── square, right side, above data bar ── */
+#navBox{
+    position:absolute;
+    top:0;
+    right:0;
+    width:var(--nav-size, 150px);
+    /* height = width = nav-size, set by JS */
     background:#111;
-    border-bottom:2px solid #ffa500;
+    border-left:1px solid #222;
+    border-bottom:2px solid #333;
     display:flex;flex-direction:column;
     align-items:center;justify-content:center;
     gap:6px;padding:10px;
+    overflow:hidden;
 }
-#navBar.offroute{border-bottom-color:#f87171;}
+#navBox.active{border-bottom-color:#ffa500;}
+#navBox.offroute{border-bottom-color:#f87171;}
 #navArrow{
-    font-size:64px;line-height:1;color:#ffa500;
+    font-size:64px;line-height:1;color:#333;
     display:inline-block;transition:transform 0.3s;
 }
-#navBar.offroute #navArrow{color:#f87171;}
-#navText{font-family:Arial;font-size:9px;font-weight:600;color:#ccc;
-    text-align:center;width:100%;overflow:hidden;
-    text-overflow:ellipsis;white-space:nowrap;letter-spacing:0.5px;}
-#navDist{font-family:Arial;font-size:15px;font-weight:700;color:#ffa500;letter-spacing:1px;}
-#navBar.offroute #navDist{color:#f87171;font-size:10px;}
+#navBox.active   #navArrow{color:#ffa500;}
+#navBox.offroute #navArrow{color:#f87171;}
+#navText{
+    font-family:Arial;font-size:9px;font-weight:600;
+    color:#333;text-align:center;width:100%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    letter-spacing:0.5px;
+}
+#navBox.active   #navText{color:#ccc;}
+#navBox.offroute #navText{color:#f87171;}
+#navDist{
+    font-family:Arial;font-size:15px;font-weight:700;
+    color:#333;letter-spacing:1px;
+}
+#navBox.active   #navDist{color:#ffa500;}
+#navBox.offroute #navDist{color:#f87171;font-size:10px;}
 
-/* ── DATA PANEL: fills rest of right column ── */
-#mapOverlay{
-    flex:1;
-    display:flex;flex-direction:column;
+/* ── DATA BAR: full width at bottom ── */
+#mapBar{
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:var(--bar-h, 66px);
     background:rgba(0,0,0,0.95);
-    border-top:none;
-    padding:4px 0;
+    border-top:1px solid #222;
+    display:flex;align-items:stretch;
 }
 .mdata{
     flex:1;display:flex;flex-direction:column;
     align-items:center;justify-content:center;
-    padding:4px;border-bottom:1px solid #1a1a1a;
+    padding:4px;border-right:1px solid #1a1a1a;
 }
-.mdata:last-child{border-bottom:none;}
+.mdata:last-child{border-right:none;}
 .mdata-val{font-family:Arial;font-weight:700;color:#fff;line-height:1;}
 .mdata-lbl{font-family:Arial;font-size:7px;color:#555;letter-spacing:2px;margin-top:2px;}
 .mdata-val.big{font-size:26px;color:#ffa500;}
-.mdata-val.med{font-size:17px;}
+.mdata-val.med{font-size:18px;}
 .mdata-val.sml{font-size:13px;color:#aaa;}
 
-/* ── MAP CONTROLS: bottom-left of map area ── */
+/* ── MAP CONTROLS ── bottom-left, above data bar ── */
 #mapControls{
-    position:fixed;left:10px;bottom:10px;
+    position:absolute;
+    left:10px;
+    bottom:calc(var(--bar-h, 66px) + 10px);
     display:flex;flex-direction:column;gap:6px;
     z-index:600;
 }
@@ -109,41 +127,9 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 .mctrl:hover{border-color:#ffa500;color:#ffa500;}
 .mctrl.active{background:#ffa500;color:#000;border-color:#ffa500;}
 
-/* ── STATUS BAR (global) ── */
-#st{position:fixed;bottom:4px;right:8px;font-size:11px;font-family:Arial;
-    color:#ffa500;letter-spacing:1px;font-weight:bold;z-index:1000;pointer-events:none;}
-.mapActive #st{display:none;}
-
-/* Route polyline shown on map */
-.leaflet-control-zoom{margin-bottom:4px!important;}
-
-/* ── PAGE INDICATOR ── */
-#pi{position:fixed;top:6px;right:10px;font-size:13px;font-family:Arial;
-    color:#444;z-index:1100;pointer-events:none;letter-spacing:4px;}
-
-/* Debug buttons top-left - only on page0 */
-#debugBtns{
-    position:fixed;top:6px;left:10px;
-    display:flex;gap:6px;z-index:1100;
-    transition: opacity 0.2s;
-}
-.mapActive #debugBtns{
-    display:none;
-}
-.dbtn{
-    background:rgba(10,10,10,0.85);
-    border:1px solid #333;border-radius:4px;
-    color:#666;font-size:10px;font-family:Arial;
-    font-weight:700;letter-spacing:2px;
-    padding:6px 10px;cursor:pointer;
-    transition:all 0.2s;
-}
-.dbtn:hover{border-color:#ffa500;color:#ffa500;}
-.dbtn.active{background:#ffa500;color:#000;border-color:#ffa500;}
-
-/* No route message */
+/* ── NO ROUTE MSG ── */
 #noRoute{
-    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    position:absolute;top:50%;left:40%;transform:translate(-50%,-50%);
     background:rgba(10,10,10,0.88);
     border:1px solid #333;border-radius:8px;
     padding:20px 28px;text-align:center;
@@ -152,6 +138,31 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 #noRoute.show{display:block;}
 #noRoute p{font-family:Arial;font-size:13px;color:#666;letter-spacing:2px;line-height:1.8;}
 #noRoute span{color:#ffa500;font-weight:700;}
+
+/* ── STATUS BAR (global) ── */
+#st{position:fixed;bottom:4px;right:8px;font-size:11px;font-family:Arial;
+    color:#ffa500;letter-spacing:1px;font-weight:bold;z-index:1000;pointer-events:none;}
+.mapActive #st{display:none;}
+
+/* ── PAGE INDICATOR ── */
+#pi{position:fixed;top:6px;right:10px;font-size:13px;font-family:Arial;
+    color:#444;z-index:1100;pointer-events:none;letter-spacing:4px;}
+
+/* ── DEBUG BUTTONS (page0 only) ── */
+#debugBtns{
+    position:fixed;top:6px;left:10px;
+    display:flex;gap:6px;z-index:1100;
+}
+.mapActive #debugBtns{display:none;}
+.dbtn{
+    background:rgba(10,10,10,0.85);
+    border:1px solid #333;border-radius:4px;
+    color:#666;font-size:10px;font-family:Arial;
+    font-weight:700;letter-spacing:2px;
+    padding:6px 10px;cursor:pointer;transition:all 0.2s;
+}
+.dbtn:hover{border-color:#ffa500;color:#ffa500;}
+.dbtn.active{background:#ffa500;color:#000;border-color:#ffa500;}
 
 .ok{color:#22c55e!important;}
 .err{color:#f87171!important;}
@@ -171,60 +182,52 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 
 <!-- PAGE 0: DASHBOARD -->
 <div class="page active" id="page0">
-    <div class="frame">
-        <canvas id="c"></canvas>
-    </div>
+    <div class="frame"><canvas id="c"></canvas></div>
 </div>
 
 <!-- PAGE 1: MAP -->
 <div class="page" id="page1">
     <div id="map"></div>
 
-    <div id="rightPanel">
-        <!-- Nav box -->
-        <div id="navBar">
-            <div id="navArrow">▲</div>
-            <div id="navText">In rotta</div>
-            <div id="navDist"></div>
-        </div>
+    <div id="navBox">
+        <div id="navArrow">▲</div>
+        <div id="navText"></div>
+        <div id="navDist"></div>
+    </div>
 
-        <!-- Data panel -->
-        <div id="mapOverlay">
-            <div class="mdata">
-                <div class="mdata-val big" id="mapSpd">0</div>
-                <div class="mdata-lbl">km/h</div>
-            </div>
-            <div class="mdata">
-                <div class="mdata-val med" id="mapGear">-</div>
-                <div class="mdata-lbl">GEAR</div>
-            </div>
-            <div class="mdata">
-                <div class="mdata-val sml" id="mapRpm">0</div>
-                <div class="mdata-lbl">RPM</div>
-            </div>
-            <div class="mdata">
-                <div class="mdata-val sml" id="mapClt">0.0</div>
-                <div class="mdata-lbl">°C CLT</div>
-            </div>
-            <div class="mdata">
-                <div class="mdata-val sml" id="mapBat">0.00</div>
-                <div class="mdata-lbl">V BAT</div>
-            </div>
+    <div id="mapBar">
+        <div class="mdata">
+            <div class="mdata-val big" id="mapSpd">0</div>
+            <div class="mdata-lbl">km/h</div>
+        </div>
+        <div class="mdata">
+            <div class="mdata-val med" id="mapGear">-</div>
+            <div class="mdata-lbl">GEAR</div>
+        </div>
+        <div class="mdata">
+            <div class="mdata-val sml" id="mapRpm">0</div>
+            <div class="mdata-lbl">RPM</div>
+        </div>
+        <div class="mdata">
+            <div class="mdata-val sml" id="mapClt">0.0</div>
+            <div class="mdata-lbl">°C CLT</div>
+        </div>
+        <div class="mdata">
+            <div class="mdata-val sml" id="mapBat">0.00</div>
+            <div class="mdata-lbl">V BAT</div>
         </div>
     </div>
 
-    <!-- No route message -->
     <div id="noRoute">
         <p>📍 Nessun percorso attivo<br>
         <span>Usa il pianificatore</span> per<br>
         calcolare e salvare un percorso</p>
     </div>
 
-    <!-- Map control buttons -->
     <div id="mapControls">
-        <button class="mctrl" id="btnNextMap" title="Torna a dashboard">◀ DASH</button>
-        <button class="mctrl" id="btnNorth"   title="Nord fisso / Heading up">N↑</button>
-        <button class="mctrl" id="btnZoom"    title="Zoom auto / manuale">AUTO</button>
+        <button class="mctrl" id="btnNextMap">◀ DASH</button>
+        <button class="mctrl" id="btnNorth">N↑</button>
+        <button class="mctrl" id="btnZoom">AUTO</button>
     </div>
 </div>
 
@@ -237,687 +240,26 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="dashboard.js"></script>
+<script src="map.js"></script>
+<script src="ble.js"></script>
 <script>
-// ═══════════════════════════════════════════════
-//  CONSTANTS
-// ═══════════════════════════════════════════════
-const SERVICE_UUID        = '5bc1a100-36e1-4b13-9bbf-8547cb834f11';
-const CHARACTERISTIC_UUID = '5bc1a101-36e1-4b13-9bbf-8547cb834f11';
-const DEVICE_NAME         = 'BMW_R1100S_Dashboard';
-const NUM_PAGES           = 2;
-const W = 800, H = 360;
-
-// Theme: 'light' or 'dark'
-let theme = localStorage.getItem('dashTheme') || 'light';
-
-// ═══════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════
-let data = { rpm:0, spd:0, iat:0, clt:0, lmd:0, bat:0, gear:'-', tot:0, trip:0, page:0 };
-let currentPage  = 0;
-let pollInterval = null;
-let bleDevice    = null;
-let retryTimer   = null;
-
-// Map state
-let leafletMap  = null;
-let mapMarker   = null;
-let watchId     = null;
-
-// ═══════════════════════════════════════════════
-//  DOM REFS
-// ═══════════════════════════════════════════════
-const canvas = document.getElementById('c');
-const ctx    = canvas.getContext('2d');
-const st     = document.getElementById('st');
-const pi     = document.getElementById('pi');
-
-// ═══════════════════════════════════════════════
-//  PAGE MANAGEMENT
-// ═══════════════════════════════════════════════
-function switchPage(n) {
-    const target = ((n % NUM_PAGES) + NUM_PAGES) % NUM_PAGES;
-    if (target === currentPage) return;
-
-    document.getElementById('page' + currentPage).classList.remove('active');
-    currentPage = target;
-    document.getElementById('page' + currentPage).classList.add('active');
-
-    // body class for status bar offset on map
-    document.body.className = currentPage === 1 ? 'mapActive' : '';
-
-    updatePageIndicator();
-
-    if (currentPage === 1) initMap();
-    else resizeAndDraw();
+// ── Layout sizing: set CSS vars from actual screen ──
+function setLayoutVars() {
+    const BAR_H  = Math.round(window.innerHeight * 0.13); // ~10% + margine
+    const NAV_SZ = window.innerHeight - BAR_H;            // square = remaining height
+    // cap nav size to avoid taking too much horizontal space
+    const navSize = Math.min(NAV_SZ, Math.round(window.innerWidth * 0.35));
+    document.documentElement.style.setProperty('--bar-h',   BAR_H  + 'px');
+    document.documentElement.style.setProperty('--nav-size', navSize + 'px');
+    // Set navBox height = width
+    const nb = document.getElementById('navBox');
+    if (nb) { nb.style.height = navSize + 'px'; }
 }
+window.addEventListener('resize', setLayoutVars);
+window.addEventListener('orientationchange', () => setTimeout(setLayoutVars, 150));
+setLayoutVars();
 
-function updatePageIndicator() {
-    let s = '';
-    for (let i = 0; i < NUM_PAGES; i++) s += (i === currentPage ? '●' : '○');
-    pi.textContent = s;
-}
-
-// ═══════════════════════════════════════════════
-//  MAP (Leaflet + GPS)
-// ═══════════════════════════════════════════════
-// ── Map state ──────────────────────────────────
-let headingUp   = false;   // false = nord fisso
-let autoZoom    = true;    // true  = zoom automatico
-let zoomManTimer = null;   // timer ripristino auto-zoom
-let routeLayer  = null;    // polyline percorso
-let routeCoords = [];      // [[lat,lng],...] geometria completa
-let navSteps    = [];      // array step navigazione
-let offRouteLayer  = null; // polyline traccia fuori rotta
-let offRoutePoints = [];   // punti raccolti fuori rotta
-let currentStep = 0;       // step attuale
-let gpsSpeed    = 0;       // velocità GPS km/h
-let gpsHeading  = 0;       // direzione GPS gradi
-
-const markerHtml = `<div style="
-    width:20px;height:20px;background:#ffa500;
-    border-radius:50%;border:3px solid #fff;
-    box-shadow:0 0 10px rgba(255,165,0,0.8);
-"></div>`;
-const markerIcon = L.divIcon({
-    className:'', html: markerHtml,
-    iconSize:[20,20], iconAnchor:[10,10]
-});
-
-function initMap() {
-    if (leafletMap) { leafletMap.invalidateSize(); return; }
-
-    leafletMap = L.map('map', {
-        zoomControl: true,
-        attributionControl: false,
-        tap: true
-    }).setView([45.65, 13.77], 15);
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19, subdomains: 'abcd'
-    }).addTo(leafletMap);
-
-    // Manual zoom → disable auto-zoom for 10s
-    leafletMap.on('zoomstart', () => {
-        if (autoZoom) {
-            autoZoom = false;
-            document.getElementById('btnZoom').textContent = 'MAN';
-            document.getElementById('btnZoom').classList.remove('active');
-        }
-        clearTimeout(zoomManTimer);
-        zoomManTimer = setTimeout(() => {
-            autoZoom = true;
-            document.getElementById('btnZoom').textContent = 'AUTO';
-            document.getElementById('btnZoom').classList.add('active');
-        }, 10000);
-    });
-
-    // Watch GPS
-    if ('geolocation' in navigator) {
-        watchId = navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            gpsSpeed   = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
-            gpsHeading = pos.coords.heading || 0;
-
-            // Update speed display (GPS)
-            document.getElementById('mapSpd').textContent = Math.round(gpsSpeed);
-
-            // Marker
-            if (!mapMarker) {
-                mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(leafletMap);
-            } else {
-                mapMarker.setLatLng([lat, lng]);
-            }
-
-            // Heading-up: rotate map with scale to fill screen
-            if (headingUp && gpsHeading !== null) {
-                leafletMap.getContainer().style.transform = `rotate(${-gpsHeading}deg) scale(1.5)`;
-                leafletMap.getContainer().style.transformOrigin = '50% 50%';
-            } else {
-                leafletMap.getContainer().style.transform = '';
-            }
-
-            // Auto-zoom by speed
-            if (autoZoom) {
-                let z = 16;
-                if      (gpsSpeed > 130) z = 12;
-                else if (gpsSpeed > 90)  z = 13;
-                else if (gpsSpeed > 50)  z = 14;
-                else if (gpsSpeed > 10)  z = 15;
-                if (leafletMap.getZoom() !== z)
-                    leafletMap.setZoom(z, { animate: true });
-            }
-
-            leafletMap.panTo([lat, lng], { animate: true, duration: 0.5 });
-
-            // Navigation: find next step
-            updateNavigation(lat, lng);
-
-        }, null, { enableHighAccuracy: true, maximumAge: 1000 });
-    }
-
-    // Load route from GitHub if available
-    loadRoute();
-
-    // Periodic off-route check (ogni 3s) in caso GPS lento o route caricata dopo GPS
-    setInterval(() => {
-        if (!mapMarker || !routeCoords.length) return;
-        const pos = mapMarker.getLatLng();
-        updateNavigation(pos.lat, pos.lng);
-    }, 3000);
-
-    // Controls
-    document.getElementById('btnNorth').addEventListener('click', () => {
-        headingUp = !headingUp;
-        const btn = document.getElementById('btnNorth');
-        btn.textContent = headingUp ? 'HDG' : 'N↑';
-        btn.classList.toggle('active', headingUp);
-        if (!headingUp) leafletMap.getContainer().style.transform = '';
-    });
-
-    document.getElementById('btnZoom').addEventListener('click', () => {
-        autoZoom = !autoZoom;
-        const btn = document.getElementById('btnZoom');
-        btn.textContent = autoZoom ? 'AUTO' : 'MAN';
-        btn.classList.toggle('active', autoZoom);
-        clearTimeout(zoomManTimer);
-    });
-
-    // Set initial zoom btn state
-    document.getElementById('btnZoom').classList.add('active');
-
-    // Back to dashboard button
-    document.getElementById('btnNextMap').addEventListener('click', () => {
-        switchPage(0);
-    });
-}
-
-// ── Load route.json from GitHub Pages ──────────
-async function loadRoute() {
-    const noRouteEl = document.getElementById('noRoute');
-    try {
-        const url = `https://flax65.github.io/bmw-dashboard/route.json?t=${Date.now()}`;
-        const res  = await fetch(url);
-        const json = await res.json();
-        if (!json.route) {
-            noRouteEl.classList.add('show');
-            return;
-        }
-        noRouteEl.classList.remove('show');
-        drawRoute(json.route);
-    } catch(e) {
-        noRouteEl.classList.add('show');
-    }
-}
-
-function drawRoute(route) {
-    if (routeLayer) { routeLayer.remove(); routeLayer = null; }
-    navSteps    = [];
-    currentStep = 0;
-
-    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
-    routeCoords = coords;
-    routeLayer = L.polyline(coords, {
-        color: '#ffa500', weight: 5, opacity: 0.8
-    }).addTo(leafletMap);
-
-    // Flatten all steps from all legs
-    route.legs.forEach(leg => {
-        leg.steps.forEach(step => {
-            if (step.maneuver) navSteps.push(step);
-        });
-    });
-
-    // Find nearest step to current GPS position
-    if (navSteps.length) {
-        currentStep = findNearestStep();
-    }
-}
-
-function findNearestStep() {
-    if (!navSteps.length) return 0;
-    // If no GPS yet, start from beginning
-    const pos = mapMarker ? mapMarker.getLatLng() : null;
-    if (!pos) return 0;
-
-    let bestIdx  = 0;
-    let bestDist = Infinity;
-    navSteps.forEach((step, i) => {
-        const slat = step.maneuver.location[1];
-        const slng = step.maneuver.location[0];
-        const d    = haversine(pos.lat, pos.lng, slat, slng);
-        if (d < bestDist) { bestDist = d; bestIdx = i; }
-    });
-
-    // Don't jump past the last step
-    return Math.min(bestIdx, navSteps.length - 1);
-}
-
-// ── Navigation: adaptive lookahead + off-route track ──
-const OFFROUTE_DIST = 80;
-
-function getApproachDist(speedKmh) {
-    if (speedKmh > 100) return 500;
-    if (speedKmh > 70)  return 350;
-    if (speedKmh > 30)  return 200;
-    return 100;
-}
-
-function updateNavigation(lat, lng) {
-    if (!navSteps.length || !routeCoords.length) return;
-
-    const bar = document.getElementById('navBar');
-    const minDistRoute = distToPolyline(lat, lng, routeCoords);
-
-    if (minDistRoute > OFFROUTE_DIST) {
-        // ── FUORI ROTTA: traccia rossa, nascondi box ──
-        bar.classList.remove('show');
-
-        offRoutePoints.push([lat, lng]);
-        if (!offRouteLayer) {
-            offRouteLayer = L.polyline(offRoutePoints, {
-                color: '#f87171', weight: 3, opacity: 0.9, dashArray: '6,4'
-            }).addTo(leafletMap);
-        } else {
-            offRouteLayer.setLatLngs(offRoutePoints);
-        }
-        return;
-    }
-
-    // ── IN ROTTA: azzera traccia fuori rotta ──
-    if (offRouteLayer) { offRouteLayer.remove(); offRouteLayer = null; }
-    offRoutePoints = [];
-
-    // Avanzamento step
-    if (currentStep >= navSteps.length) { bar.classList.remove('show'); return; }
-    const step = navSteps[currentStep];
-    const dist = haversine(lat, lng, step.maneuver.location[1], step.maneuver.location[0]);
-    if (dist < 30 && currentStep < navSteps.length - 1) currentStep++;
-
-    // Lookahead adattivo alla velocità
-    const APPROACH_DIST = getApproachDist(gpsSpeed);
-
-    if (dist <= APPROACH_DIST) {
-        const next = navSteps[currentStep];
-        bar.classList.add('show');
-        setNavArrow(maneuverDeg(next.maneuver.type, next.maneuver.modifier));
-        document.getElementById('navText').textContent =
-            next.name || formatManeuver(next.maneuver.type, next.maneuver.modifier);
-        document.getElementById('navDist').textContent = formatDist(dist);
-    } else {
-        bar.classList.remove('show');
-    }
-}
-
-function getBearing(lat1, lng1, lat2, lng2) {
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const y = Math.sin(dLng) * Math.cos(φ2);
-    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(dLng);
-    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-}
-
-function setNavArrow(deg) {
-    document.getElementById('navArrow').textContent = '▲';
-    document.getElementById('navArrow').style.transform = `rotate(${deg}deg)`;
-}
-
-function maneuverDeg(type, mod) {
-    if (type === 'arrive')    return 0;
-    if (type === 'depart')    return 0;
-    if (type === 'roundabout' || type === 'rotary') return 45;
-    const map = {
-        'straight': 0, 'slight right': 30, 'right': 90, 'sharp right': 135,
-        'uturn': 180, 'sharp left': 225, 'left': 270, 'slight left': 330
-    };
-    return map[mod] !== undefined ? map[mod] : 0;
-}
-
-function bearingArrow(deg) {
-    // kept for compatibility — now sets triangle rotation
-    setNavArrow(deg);
-}
-
-// Distanza minima in metri dal punto [lat,lng] alla polilinea
-function distToPolyline(lat, lng, coords) {
-    if (!coords.length) return Infinity;
-    let minD = Infinity;
-    for (let i = 0; i < coords.length - 1; i++) {
-        const d = distToSegment(lat, lng, coords[i][0], coords[i][1], coords[i+1][0], coords[i+1][1]);
-        if (d < minD) minD = d;
-    }
-    return minD;
-}
-
-function distToSegment(plat, plng, alat, alng, blat, blng) {
-    const dx = blat - alat, dy = blng - alng;
-    if (dx === 0 && dy === 0) return haversine(plat, plng, alat, alng);
-    const t = Math.max(0, Math.min(1, ((plat-alat)*dx + (plng-alng)*dy) / (dx*dx + dy*dy)));
-    return haversine(plat, plng, alat + t*dx, alng + t*dy);
-}
-
-function showNavBar() {
-    document.getElementById('navBar').classList.add('show');
-}
-
-function haversine(lat1, lng1, lat2, lng2) {
-    const R = 6371000;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 +
-              Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-function maneuverArrow(type, mod) {
-    if (type === 'arrive')    return '🏁';
-    if (type === 'depart')    return '↑';
-    if (type === 'roundabout' || type === 'rotary') return '↻';
-    const arrows = {
-        'left':'↰','sharp left':'↺','slight left':'↖',
-        'right':'↱','sharp right':'↻','slight right':'↗',
-        'straight':'↑','uturn':'↩'
-    };
-    return arrows[mod] || '↑';
-}
-
-function formatManeuver(type, mod) {
-    if (type === 'arrive')    return 'Arrivo a destinazione';
-    if (type === 'depart')    return 'Partenza';
-    if (type === 'roundabout') return 'Rotatoria';
-    const labels = {
-        'left':'Svolta a sinistra','sharp left':'Svolta brusca sinistra',
-        'slight left':'Tieni la sinistra','right':'Svolta a destra',
-        'sharp right':'Svolta brusca destra','slight right':'Tieni la destra',
-        'straight':'Prosegui dritto','uturn':'Inversione a U'
-    };
-    return labels[mod] || 'Continua';
-}
-
-function formatDist(m) {
-    return m >= 1000 ? (m/1000).toFixed(1)+' km' : Math.round(m)+' m';
-}
-
-function updateMapOverlay() {
-    // Speed from GPS (more accurate for map page)
-    // data.spd from BLE used as fallback
-    document.getElementById('mapGear').textContent = data.gear;
-    document.getElementById('mapRpm').textContent  = Math.round(data.rpm);
-    document.getElementById('mapClt').textContent  = Number(data.clt).toFixed(1);
-    document.getElementById('mapBat').textContent  = Number(data.bat).toFixed(2);
-    // mapSpd is updated directly in the GPS watchPosition callback
-}
-
-// ═══════════════════════════════════════════════
-//  CANVAS – SEVEN SEGMENT
-// ═══════════════════════════════════════════════
-const SEGS = {
-    '0':[1,1,1,1,1,1,0],'1':[0,1,1,0,0,0,0],'2':[1,1,0,1,1,0,1],
-    '3':[1,1,1,1,0,0,1],'4':[0,1,1,0,0,1,1],'5':[1,0,1,1,0,1,1],
-    '6':[1,0,1,1,1,1,1],'7':[1,1,1,0,0,0,0],'8':[1,1,1,1,1,1,1],
-    '9':[1,1,1,1,0,1,1],' ':[0,0,0,0,0,0,0],'-':[0,0,0,0,0,0,1]
-};
-
-function fp(pts){ctx.beginPath();ctx.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)ctx.lineTo(pts[i],pts[i+1]);ctx.closePath();ctx.fill();}
-function dd(x,y,w,h,ch,sw,col){
-    const seg=SEGS[ch]||SEGS[' '],p=sw*0.45;
-    ctx.fillStyle=col||'#111';
-    if(seg[0])fp([x+p,y,x+w-p,y,x+w-p-sw,y+sw,x+p+sw,y+sw]);
-    if(seg[1])fp([x+w,y+p,x+w,y+h/2-p,x+w-sw,y+h/2-p-sw*0.3,x+w-sw,y+p+sw]);
-    if(seg[2])fp([x+w,y+h/2+p,x+w,y+h-p,x+w-sw,y+h-p-sw,x+w-sw,y+h/2+p+sw*0.3]);
-    if(seg[3])fp([x+p,y+h,x+w-p,y+h,x+w-p-sw,y+h-sw,x+p+sw,y+h-sw]);
-    if(seg[4])fp([x,y+h/2+p,x,y+h-p,x+sw,y+h-p-sw,x+sw,y+h/2+p+sw*0.3]);
-    if(seg[5])fp([x,y+p,x,y+h/2-p,x+sw,y+h/2-p-sw*0.3,x+sw,y+p+sw]);
-    if(seg[6])fp([x+p+sw*0.3,y+h/2,x+p+sw,y+h/2-sw*0.45,x+w-p-sw,y+h/2-sw*0.45,x+w-p-sw*0.3,y+h/2,x+w-p-sw,y+h/2+sw*0.45,x+p+sw,y+h/2+sw*0.45]);
-}
-function dot(x,y,r,col){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=col||'#111';ctx.fill();}
-function dn(str,x,y,dw,dh,sw,gap,col){
-    let cx=x;
-    for(let i=0;i<str.length;i++){
-        const ch=str[i];
-        if(ch==='.'){dot(cx+sw*0.5,y+dh+sw*0.15,sw*0.45,col);cx+=sw*1.2;}
-        else{if(ch!=' ')dd(cx,y,dw,dh,ch,sw,col);cx+=dw+gap;}
-    }
-}
-function tw(str,dw,sw,gap){let w=0;for(let i=0;i<str.length;i++)w+=str[i]==='.'?sw*1.2:dw+gap;return w-gap;}
-function lb(txt,x,y,sz,col,sp){ctx.fillStyle=col||'#999';ctx.font=`600 ${sz||9}px Arial`;ctx.letterSpacing=(sp||'2')+'px';ctx.fillText(txt,x,y);}
-function un(txt,x,y){ctx.fillStyle='#777';ctx.font='400 11px Arial';ctx.letterSpacing='0px';ctx.fillText(txt,x,y);}
-
-function draw() {
-    // Theme colors
-    const BG   = theme === 'dark' ? '#000' : '#fff';
-    const LINE = theme === 'dark' ? '#222' : '#eee';
-    const DIG  = theme === 'dark' ? '#fff' : '#111';
-    const LBL  = theme === 'dark' ? '#555' : '#999';
-    const UNIT = theme === 'dark' ? '#444' : '#777';
-
-    // Update frame background
-    document.querySelector('.frame').style.background = BG;
-
-    ctx.fillStyle=BG; ctx.fillRect(0,0,W,H);
-    const SP=H*0.60, HL=W*0.5;
-    ctx.fillStyle=LINE;
-    ctx.fillRect(0,SP,W,0.5); ctx.fillRect(HL,0,0.5,SP);
-    for(let i=1;i<4;i++) ctx.fillRect(W*i/5,SP,0.5,H-SP);
-    ctx.fillRect(W*4/5,SP,0.5,H-SP);
-
-    // RPM
-    const DWB=58,DHB=106,SWB=11,GB=10;
-    const rs=String(Math.round(data.rpm)),rw=tw(rs,DWB,SWB,GB),rx=(HL-rw)/2,ry=(SP-DHB)/2;
-    dn(rs,rx,ry,DWB,DHB,SWB,GB,DIG); lb('RPM',rx,ry-8,11,LBL,'4');
-
-    // SPEED
-    const ss=String(Math.round(data.spd)),sw2=tw(ss,DWB,SWB,GB),sx=HL+(HL-sw2)/2-24,sy=ry;
-    dn(ss,sx,sy,DWB,DHB,SWB,GB,DIG);
-    ctx.fillStyle=UNIT; ctx.font='400 11px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km/h',sx+sw2+12,sy+DHB);
-    lb('SPEED',sx,sy-8,11,LBL,'4');
-
-    // TOT / TRIP
-    const DWK=12,DHK=22,SWK=2.6,GK=2,ty=sy+DHB+18;
-    ctx.fillStyle=LINE; ctx.fillRect(HL+8,ty-6,HL-16,0.5);
-    const ts=Number(data.tot).toFixed(1),tw2=tw(ts,DWK,SWK,GK),tx=HL+12;
-    dn(ts,tx,ty,DWK,DHK,SWK,GK,DIG);
-    ctx.fillStyle=UNIT; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',tx+tw2+4,ty+DHK-1);
-    lb('TOT',tx,ty-4,7,LBL,'1.5');
-    const tr=Number(data.trip).toFixed(1),trw=tw(tr,DWK,SWK,GK),trx=HL+HL/2+4;
-    dn(tr,trx,ty,DWK,DHK,SWK,GK,DIG);
-    ctx.fillStyle=UNIT; ctx.font='400 9px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km',trx+trw+4,ty+DHK-1);
-    lb('TRIP',trx,ty-4,7,LBL,'1.5');
-    ctx.fillStyle=LINE; ctx.fillRect(HL+HL/2-2,ty,0.5,DHK+10);
-
-    // BOTTOM PARAMS
-    const DWS=19,DHS=40,SWS=4,GS=3,BY=SP+(H-SP-DHS)/2;
-    const params=[
-        {l:'IAT', v:Number(data.iat).toFixed(1), u:'°C'},
-        {l:'CLT', v:Number(data.clt).toFixed(1), u:'°C'},
-        {l:'LMD', v:String(Math.round(data.lmd)),  u:'mV'},
-        {l:'BAT', v:Number(data.bat).toFixed(2),   u:'V'}
-    ];
-    params.forEach(({l,v,u},c)=>{
-        const cw=W/5,cx=c*cw,vw=tw(v,DWS,SWS,GS),bx=cx+(cw-vw)/2-8;
-        dn(v,bx,BY,DWS,DHS,SWS,GS,DIG);
-        ctx.fillStyle=UNIT; ctx.font='400 11px Arial'; ctx.letterSpacing='0px'; ctx.fillText(u,bx+vw+5,BY+DHS);
-        ctx.fillStyle=LBL;  ctx.font='600 9px Arial';  ctx.letterSpacing='2px'; ctx.fillText(l,bx,BY-9);
-    });
-
-    // GEAR
-    const DWG=32,DHG=54,SWG=7,gcx=W*4/5,gcw=W/5;
-    const gs=String(data.gear),gw=tw(gs,DWG,SWG,0),gx=gcx+(gcw-gw)/2,gy=SP+(H-SP-DHG)/2;
-    dn(gs,gx,gy,DWG,DHG,SWG,0,DIG);
-    ctx.fillStyle=LBL; ctx.font='600 9px Arial'; ctx.letterSpacing='2px'; ctx.fillText('GEAR',gx,gy-9);
-}
-
-function resizeAndDraw() {
-    requestAnimationFrame(() => {
-        const w = document.documentElement.clientWidth;
-        const h = document.documentElement.clientHeight;
-        canvas.style.width  = w + 'px';
-        canvas.style.height = h + 'px';
-        canvas.width  = w * devicePixelRatio;
-        canvas.height = h * devicePixelRatio;
-        ctx.setTransform(canvas.width/W, 0, 0, canvas.height/H, 0, 0);
-        draw();
-    });
-}
-window.addEventListener('resize', resizeAndDraw);
-window.addEventListener('orientationchange', () => {
-    setTimeout(resizeAndDraw, 100);
-    setTimeout(resizeAndDraw, 400);
-});
-
-// ═══════════════════════════════════════════════
-//  BLE – CONNECTION
-// ═══════════════════════════════════════════════
-async function setupConnection(device) {
-    bleDevice = device;
-    st.textContent = 'CONNECTING...';
-    st.className = '';
-    if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
-
-    try {
-        const server     = await device.gatt.connect();
-        const service    = await server.getPrimaryService(SERVICE_UUID);
-        const charct     = await service.getCharacteristic(CHARACTERISTIC_UUID);
-
-        const readData = async () => {
-            try {
-                const value     = await charct.readValue();
-                const parsed    = JSON.parse(new TextDecoder().decode(value));
-
-                // Page switching (detect edge 0→1→0...)
-                if (parsed.page !== undefined && parsed.page !== currentPage) {
-                    switchPage(parsed.page);
-                }
-
-                Object.assign(data, parsed);
-
-                if (currentPage === 0) draw();
-                else updateMapOverlay();
-
-                st.textContent = 'LIVE';
-                st.className   = 'ok';
-            } catch(e) { /* silent – transient read error */ }
-        };
-
-        await readData();
-        if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(readData, 250);
-
-        device.addEventListener('gattserverdisconnected', () => {
-            if (pollInterval) clearInterval(pollInterval);
-            st.textContent = 'RECONNECTING...';
-            st.className   = 'err';
-            scheduleRetry(device);
-        });
-
-        st.textContent = 'LIVE';
-        st.className   = 'ok';
-
-    } catch(e) {
-        st.textContent = 'ERROR';
-        st.className   = 'err';
-        scheduleRetry(device);
-    }
-}
-
-let retryCount = 0;
-function scheduleRetry(device) {
-    if (retryTimer) clearTimeout(retryTimer);
-    if (retryCount >= 20) {
-        retryCount = 0;
-        st.textContent = 'TAP TO CONNECT';
-        st.className   = 'err';
-        bleDevice = null;
-        return;
-    }
-    retryCount++;
-    retryTimer = setTimeout(() => setupConnection(device), 2000);
-}
-
-// ─── First connect (shows picker only if device unknown) ───
-async function connectBLE() {
-    if (!navigator.bluetooth) {
-        st.textContent = 'BT NOT SUPPORTED';
-        st.className   = 'err';
-        return;
-    }
-    try {
-        st.textContent = 'SCANNING...';
-        st.className   = '';
-        let device = await tryKnownDevice();
-        if (!device) {
-            device = await navigator.bluetooth.requestDevice({
-                filters: [{ name: DEVICE_NAME }],
-                optionalServices: [SERVICE_UUID]
-            });
-        }
-        retryCount = 0;
-        await setupConnection(device);
-    } catch(e) {
-        st.textContent = 'TAP TO CONNECT';
-        st.className   = 'err';
-    }
-}
-
-// ─── Try known devices (no dialog) ───
-async function tryKnownDevice() {
-    if (!navigator.bluetooth.getDevices) return null;
-    try {
-        const devices = await navigator.bluetooth.getDevices();
-        return devices.find(d => d.name === DEVICE_NAME) || null;
-    } catch(e) { return null; }
-}
-
-// ═══════════════════════════════════════════════
-//  AUTO-CONNECT ON LOAD (no gesture needed for known device)
-// ═══════════════════════════════════════════════
-window.addEventListener('load', async () => {
-    // Init theme button label
-    const tBtn = document.getElementById('btnTheme');
-    tBtn.textContent = theme === 'dark' ? '☾ DARK' : '☀ LIGHT';
-    tBtn.classList.toggle('active', theme === 'dark');
-
-    resizeAndDraw();
-    setTimeout(resizeAndDraw, 100);
-    setTimeout(resizeAndDraw, 300);
-    setTimeout(resizeAndDraw, 800);
-
-    const device = await tryKnownDevice();
-    if (device) {
-        st.textContent = 'AUTO CONNECT...';
-        retryCount = 0;
-        await setupConnection(device);
-    }
-});
-
-// ═══════════════════════════════════════════════
-//  USER INTERACTIONS
-// ═══════════════════════════════════════════════
-// Tap canvas page0 = connect (manual fallback)
-canvas.addEventListener('click', () => {
-    if (!bleDevice?.gatt?.connected) connectBLE();
-});
-
-// THEME button = toggle light/dark dashboard
-document.getElementById('btnTheme').addEventListener('click', () => {
-    theme = theme === 'light' ? 'dark' : 'light';
-    localStorage.setItem('dashTheme', theme);
-    const btn = document.getElementById('btnTheme');
-    btn.textContent = theme === 'dark' ? '☾ DARK' : '☀ LIGHT';
-    btn.classList.toggle('active', theme === 'dark');
-    if (currentPage === 0) draw();
-});
-
-// NEXT button = manual page switch
-document.getElementById('btnNext').addEventListener('click', () => {
-    switchPage((currentPage + 1) % NUM_PAGES);
-});
-
-// ═══════════════════════════════════════════════
-//  SERVICE WORKER (PWA offline)
-// ═══════════════════════════════════════════════
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
