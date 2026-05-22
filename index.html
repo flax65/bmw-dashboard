@@ -402,7 +402,7 @@ function initMap() {
             // Navigation: find next step
             updateNavigation(lat, lng);
 
-        }, null, { enableHighAccuracy: true, maximumAge: 1000 });
+        }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
     }
 
     // Load route from GitHub if available
