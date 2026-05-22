@@ -353,7 +353,7 @@ function initMap() {
         watchId = navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
-            gpsSpeed   = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
+            gpsSpeed = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
             gpsHeading = pos.coords.heading || 0;
             // Aggiorna heading solo sopra i 5 km/h, congela sotto i 4 km/h
             if (gpsSpeed >= 5 && pos.coords.heading !== null) {
@@ -402,7 +402,7 @@ function initMap() {
             // Navigation: find next step
             updateNavigation(lat, lng);
 
-        }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+        }, null, { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 });
     }
 
     // Load route from GitHub if available
@@ -629,9 +629,8 @@ function draw() {
     const rs=String(Math.round(data.rpm)),rw=tw(rs,DWB,SWB,GB),rx=(HL-rw)/2,ry=(SP-DHB)/2;
     dn(rs,rx,ry,DWB,DHB,SWB,GB,DIG); lb('RPM',rx,ry-8,11,LBL,'4');
 
-    // SPEED (da GPS se disponibile, altrimenti BLE)
-    const spdDisplay = gpsSpeed > 0 ? gpsSpeed : data.spd;
-    const ss=String(Math.round(spdDisplay)),sw2=tw(ss,DWB,SWB,GB),sx=HL+(HL-sw2)/2-24,sy=ry;
+    // SPEED (da GPS)
+    const ss=String(Math.round(gpsSpeed)),sw2=tw(ss,DWB,SWB,GB),sx=HL+(HL-sw2)/2-24,sy=ry;
     dn(ss,sx,sy,DWB,DHB,SWB,GB,DIG);
     ctx.fillStyle=UNIT; ctx.font='400 11px Arial'; ctx.letterSpacing='0px'; ctx.fillText('km/h',sx+sw2+12,sy+DHB);
     lb('SPEED',sx,sy-8,11,LBL,'4');
