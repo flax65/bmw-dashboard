@@ -842,27 +842,16 @@ document.getElementById('btnNext').addEventListener('click', () => {
 // ═══════════════════════════════════════════════
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').then(reg => {
+        // SW già in attesa (tab aperta a lungo): attivalo subito
+        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
-            newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // Nuovo SW pronto: mostra modale
-                    document.getElementById('updateModal').classList.add('show');
-                }
+            const nw = reg.installing;
+            nw.addEventListener('statechange', () => {
+                if (nw.state === 'installed') nw.postMessage({ type: 'SKIP_WAITING' });
             });
         });
     }).catch(() => {});
-
-    document.getElementById('btnUpdate').addEventListener('click', () => {
-        navigator.serviceWorker.getRegistration().then(reg => {
-            if (reg && reg.waiting) {
-                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-            }
-        });
-        window.location.reload(true);
-    });
-
-    // Ricarica automatica quando il nuovo SW prende il controllo
+    // Reload automatico appena il nuovo SW prende controllo
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         window.location.reload(true);
     });
