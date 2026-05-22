@@ -124,7 +124,26 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 #noRoute p{font-family:Arial;font-size:13px;color:#666;letter-spacing:2px;line-height:1.8;}
 #noRoute span{color:#ffa500;font-weight:700;}
 
-.ok{color:#22c55e!important;}
+/* ── UPDATE MODAL ── */
+#updateModal{
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,0.85);
+    display:none;align-items:center;justify-content:center;
+    z-index:9999;
+}
+#updateModal.show{display:flex;}
+#updateBox{
+    background:#111;border:1px solid #ffa500;border-radius:10px;
+    padding:28px 32px;text-align:center;max-width:280px;
+}
+#updateBox p{font-family:Arial;font-size:13px;color:#aaa;letter-spacing:1px;line-height:1.8;margin-bottom:20px;}
+#updateBox span{color:#ffa500;font-weight:700;}
+#btnUpdate{
+    background:#ffa500;color:#000;border:none;border-radius:6px;
+    font-family:Arial;font-size:13px;font-weight:700;letter-spacing:2px;
+    padding:12px 28px;cursor:pointer;width:100%;
+}
+#btnUpdate:hover{background:#ffb733;}
 .err{color:#f87171!important;}
 
 /* Leaflet tweaks - zoom stays right side */
@@ -200,6 +219,14 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 </div>
 
 <!-- GLOBAL UI -->
+<!-- UPDATE MODAL -->
+<div id="updateModal">
+    <div id="updateBox">
+        <p>🔄 <span>Aggiornamento disponibile</span><br>Nuova versione rilevata.<br>Vuoi ricaricare ora?</p>
+        <button id="btnUpdate">AGGIORNA ORA</button>
+    </div>
+</div>
+
 <div id="st">TAP TO CONNECT</div>
 <div id="pi">●○</div>
 <div id="debugBtns">
@@ -283,22 +310,24 @@ let gpsSpeed    = 0;       // velocità GPS km/h
 let gpsHeading  = 0;       // direzione GPS gradi
 let lastKnownHeading = 0;  // ultimo heading valido (>= 5 km/h)
 
-const markerHtml = `<div id="posArrow" style="
-    width:0;height:0;
-    border-left:10px solid transparent;
-    border-right:10px solid transparent;
-    border-bottom:22px solid #ffa500;
-    filter:drop-shadow(0 0 6px rgba(255,165,0,0.9));
-    transform-origin:50% 70%;
-    transform:rotate(0deg);
-"></div>`;
-const markerIcon = L.divIcon({
-    className:'', html: markerHtml,
-    iconSize:[20,22], iconAnchor:[10,15]
-});
+let markerIcon = null;
 
 function initMap() {
     if (leafletMap) { leafletMap.invalidateSize(); return; }
+
+    markerIcon = L.divIcon({
+        className:'',
+        html:`<div style="
+            width:0;height:0;
+            border-left:10px solid transparent;
+            border-right:10px solid transparent;
+            border-bottom:22px solid #ffa500;
+            filter:drop-shadow(0 0 6px rgba(255,165,0,0.9));
+            transform-origin:50% 50%;
+            transform:rotate(0deg);
+        "></div>`,
+        iconSize:[20,22], iconAnchor:[10,11]
+    });
 
     leafletMap = L.map('map', {
         zoomControl: true,
@@ -347,8 +376,10 @@ function initMap() {
                 mapMarker.setLatLng([lat, lng]);
             }
             // Ruota la freccia nel senso di marcia (usa lastKnownHeading)
-            const arrowEl = document.getElementById('posArrow');
-            if (arrowEl) arrowEl.style.transform = `rotate(${lastKnownHeading}deg)`;
+            if (mapMarker) {
+                const el = mapMarker.getElement();
+                if (el) el.firstChild.style.transform = `rotate(${lastKnownHeading}deg)`;
+            }
 
             // Heading-up: rotate map with scale to fill screen
             if (headingUp) {
@@ -813,7 +844,31 @@ document.getElementById('btnNext').addEventListener('click', () => {
 //  SERVICE WORKER (PWA offline)
 // ═══════════════════════════════════════════════
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+        reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // Nuovo SW pronto: mostra modale
+                    document.getElementById('updateModal').classList.add('show');
+                }
+            });
+        });
+    }).catch(() => {});
+
+    document.getElementById('btnUpdate').addEventListener('click', () => {
+        navigator.serviceWorker.getRegistration().then(reg => {
+            if (reg && reg.waiting) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+        });
+        window.location.reload(true);
+    });
+
+    // Ricarica automatica quando il nuovo SW prende il controllo
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload(true);
+    });
 }
 </script>
 </body>
