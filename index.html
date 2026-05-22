@@ -22,39 +22,42 @@ html,body{width:100%;height:100%;background:#111;overflow:hidden;}
 .frame{position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;overflow:hidden;}
 canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 
-/* PAGE 1 - MAP */
+/* PAGE 1 - MAP fullscreen */
 #page1{background:#0a0a0a;}
 #map{position:absolute;top:0;left:0;right:0;bottom:0;}
 
-/* NAV BOX - square, top-right, above data bar */
-#navBox{
-    position:absolute;top:0;right:0;
-    background:#111;
-    border-left:1px solid #222;
-    border-bottom:2px solid #333;
-    display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
-    gap:6px;padding:10px;
-    overflow:hidden;z-index:500;
+/* NAV BANNER - overlay top, hidden by default */
+#navBanner{
+    position:absolute;top:0;left:0;right:0;
+    background:rgba(10,10,10,0.93);
+    border-bottom:3px solid #ffa500;
+    display:flex;align-items:center;
+    padding:12px 16px;gap:16px;
+    z-index:600;
+    transform:translateY(-100%);
+    transition:transform 0.3s ease;
 }
-#navBox.active{border-bottom-color:#ffa500;}
-#navBox.offroute{border-bottom-color:#f87171;}
-#navArrow{font-size:64px;line-height:1;color:#333;display:inline-block;transition:transform 0.3s;}
-#navBox.active #navArrow{color:#ffa500;}
-#navBox.offroute #navArrow{color:#f87171;}
-#navText{font-family:Arial;font-size:9px;font-weight:600;color:#444;text-align:center;
-    width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:0.5px;}
-#navBox.active #navText{color:#ccc;}
-#navBox.offroute #navText{color:#f87171;}
-#navDist{font-family:Arial;font-size:15px;font-weight:700;color:#333;letter-spacing:1px;}
-#navBox.active #navDist{color:#ffa500;}
-#navBox.offroute #navDist{color:#f87171;font-size:10px;}
+#navBanner.show{transform:translateY(0);}
+#navBanner.offroute{border-bottom-color:#f87171;}
 
-/* DATA BAR - full width bottom */
+#navArrow{
+    font-size:48px;line-height:1;color:#ffa500;
+    flex-shrink:0;
+    display:inline-block;transition:transform 0.3s;
+}
+#navBanner.offroute #navArrow{color:#f87171;}
+
+#navInfo{display:flex;flex-direction:column;gap:4px;flex:1;}
+#navDist{font-family:Arial;font-size:24px;font-weight:700;color:#ffa500;letter-spacing:1px;}
+#navText{font-family:Arial;font-size:13px;font-weight:600;color:#ccc;letter-spacing:0.5px;}
+#navBanner.offroute #navDist{color:#f87171;}
+#navBanner.offroute #navText{color:#f87171;}
+
+/* DATA BAR bottom overlay */
 #mapBar{
     position:absolute;bottom:0;left:0;right:0;
-    background:rgba(0,0,0,0.95);border-top:1px solid #222;
-    display:flex;align-items:stretch;z-index:500;
+    background:rgba(0,0,0,0.88);border-top:1px solid #222;
+    display:flex;align-items:stretch;z-index:500;height:60px;
 }
 .mdata{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
     padding:4px;border-right:1px solid #1a1a1a;}
@@ -66,7 +69,7 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 .mdata-val.sml{font-size:13px;color:#aaa;}
 
 /* MAP CONTROLS */
-#mapControls{position:absolute;left:10px;display:flex;flex-direction:column;gap:6px;z-index:600;}
+#mapControls{position:absolute;left:10px;bottom:76px;display:flex;flex-direction:column;gap:6px;z-index:600;}
 .mctrl{width:44px;height:44px;background:rgba(10,10,10,0.92);border:1px solid #333;border-radius:6px;
     color:#aaa;font-size:10px;font-weight:700;letter-spacing:0.5px;cursor:pointer;
     display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-family:Arial;
@@ -75,7 +78,7 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 .mctrl.active{background:#ffa500;color:#000;border-color:#ffa500;}
 
 /* NO ROUTE */
-#noRoute{position:absolute;top:40%;left:40%;transform:translate(-50%,-50%);
+#noRoute{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     background:rgba(10,10,10,0.88);border:1px solid #333;border-radius:8px;
     padding:20px 28px;text-align:center;z-index:600;display:none;pointer-events:none;}
 #noRoute.show{display:block;}
@@ -88,6 +91,7 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 .mapActive #st{display:none;}
 #pi{position:fixed;top:6px;right:10px;font-size:13px;font-family:Arial;
     color:#444;z-index:1100;pointer-events:none;letter-spacing:4px;}
+.mapActive #pi{display:none;}
 #debugBtns{position:fixed;top:6px;left:10px;display:flex;gap:6px;z-index:1100;}
 .mapActive #debugBtns{display:none;}
 .dbtn{background:rgba(10,10,10,0.85);border:1px solid #333;border-radius:4px;
@@ -98,7 +102,7 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 .ok{color:#22c55e!important;}
 .err{color:#f87171!important;}
 
-.leaflet-control-zoom{border:none!important;margin-right:10px!important;}
+.leaflet-control-zoom{border:none!important;margin-right:10px!important;margin-bottom:70px!important;}
 .leaflet-control-zoom a{background:rgba(10,10,10,0.92)!important;color:#888!important;
     border:1px solid #333!important;width:44px!important;height:44px!important;
     line-height:44px!important;font-size:18px!important;box-shadow:0 2px 8px rgba(0,0,0,0.5)!important;}
@@ -113,11 +117,16 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 
 <div class="page" id="page1">
     <div id="map"></div>
-    <div id="navBox">
+
+    <!-- Nav banner overlay top -->
+    <div id="navBanner">
         <div id="navArrow">▲</div>
-        <div id="navText"></div>
-        <div id="navDist"></div>
+        <div id="navInfo">
+            <div id="navDist"></div>
+            <div id="navText"></div>
+        </div>
     </div>
+
     <div id="mapBar">
         <div class="mdata"><div class="mdata-val big" id="mapSpd">0</div><div class="mdata-lbl">km/h</div></div>
         <div class="mdata"><div class="mdata-val med" id="mapGear">-</div><div class="mdata-lbl">GEAR</div></div>
@@ -125,7 +134,9 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
         <div class="mdata"><div class="mdata-val sml" id="mapClt">0.0</div><div class="mdata-lbl">°C CLT</div></div>
         <div class="mdata"><div class="mdata-val sml" id="mapBat">0.00</div><div class="mdata-lbl">V BAT</div></div>
     </div>
+
     <div id="noRoute"><p>📍 Nessun percorso attivo<br><span>Usa il pianificatore</span> per<br>calcolare e salvare un percorso</p></div>
+
     <div id="mapControls">
         <button class="mctrl" id="btnNextMap">◀ DASH</button>
         <button class="mctrl" id="btnNorth">N↑</button>
@@ -144,7 +155,6 @@ canvas{position:fixed;top:0;left:0;display:block;cursor:pointer;}
 <script>
 'use strict';
 
-// ── Constants ──
 const SERVICE_UUID        = '5bc1a100-36e1-4b13-9bbf-8547cb834f11';
 const CHARACTERISTIC_UUID = '5bc1a101-36e1-4b13-9bbf-8547cb834f11';
 const DEVICE_NAME         = 'BMW_R1100S_Dashboard';
@@ -152,7 +162,6 @@ const NUM_PAGES           = 2;
 const W = 800, H = 360;
 const OFFROUTE_DIST       = 80;
 
-// ── App state ──
 let theme        = localStorage.getItem('dashTheme') || 'light';
 let data         = { rpm:0, spd:0, iat:0, clt:0, lmd:0, bat:0, gear:'-', tot:0, trip:0, page:0 };
 let currentPage  = 0;
@@ -161,7 +170,6 @@ let bleDevice    = null;
 let retryTimer   = null;
 let retryCount   = 0;
 
-// ── Map state ──
 let leafletMap     = null;
 let mapMarker      = null;
 let headingUp      = false;
@@ -176,42 +184,12 @@ let offRoutePoints = [];
 let gpsSpeed       = 0;
 let gpsHeading     = 0;
 
-// ── DOM ──
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const st     = document.getElementById('st');
 const pi     = document.getElementById('pi');
 
-// ═══════════════════════════════════════════════
-//  LAYOUT
-// ═══════════════════════════════════════════════
-function applyLayout() {
-    const sh   = window.innerHeight;
-    const sw   = window.innerWidth;
-    const barH = Math.round(sh * 0.13);
-    const navS = Math.min(sh - barH, Math.round(sw * 0.38));
-
-    const nb  = document.getElementById('navBox');
-    nb.style.width  = navS + 'px';
-    nb.style.height = navS + 'px';
-    nb.style.bottom = barH + 'px';
-
-    document.getElementById('mapBar').style.height = barH + 'px';
-
-    const map = document.getElementById('map');
-    map.style.right  = navS + 'px';
-    map.style.bottom = barH + 'px';
-
-    document.getElementById('mapControls').style.bottom = (barH + 10) + 'px';
-
-    if (leafletMap) leafletMap.invalidateSize();
-}
-window.addEventListener('resize', applyLayout);
-window.addEventListener('orientationchange', () => setTimeout(applyLayout, 150));
-
-// ═══════════════════════════════════════════════
-//  PAGE MANAGEMENT
-// ═══════════════════════════════════════════════
+// ── Page management ──
 function switchPage(n) {
     const target = ((n % NUM_PAGES) + NUM_PAGES) % NUM_PAGES;
     if (target === currentPage) return;
@@ -220,7 +198,7 @@ function switchPage(n) {
     document.getElementById('page' + currentPage).classList.add('active');
     document.body.className = currentPage === 1 ? 'mapActive' : '';
     updatePageIndicator();
-    if (currentPage === 1) { applyLayout(); initMap(); }
+    if (currentPage === 1) initMap();
     else resizeAndDraw();
 }
 
@@ -230,9 +208,7 @@ function updatePageIndicator() {
     pi.textContent = s;
 }
 
-// ═══════════════════════════════════════════════
-//  MAP
-// ═══════════════════════════════════════════════
+// ── Map ──
 const markerHtml = `<div style="width:20px;height:20px;background:#ffa500;border-radius:50%;border:3px solid #fff;box-shadow:0 0 10px rgba(255,165,0,0.8);"></div>`;
 
 function initMap() {
@@ -277,7 +253,7 @@ function initMap() {
             }
 
             if (headingUp && gpsHeading !== null) {
-                leafletMap.getContainer().style.transform      = `rotate(${-gpsHeading}deg) scale(1.5)`;
+                leafletMap.getContainer().style.transform = `rotate(${-gpsHeading}deg) scale(1.5)`;
                 leafletMap.getContainer().style.transformOrigin = '50% 50%';
             } else {
                 leafletMap.getContainer().style.transform = '';
@@ -357,6 +333,7 @@ function findNearestStep() {
     return Math.min(bestIdx, navSteps.length-1);
 }
 
+// ── Navigation ──
 function getApproachDist(spd) {
     if (spd > 100) return 500;
     if (spd > 70)  return 350;
@@ -366,14 +343,16 @@ function getApproachDist(spd) {
 
 function updateNavigation(lat, lng) {
     if (!navSteps.length || !routeCoords.length) return;
-    const box     = document.getElementById('navBox');
+    const banner  = document.getElementById('navBanner');
     const minDist = distToPolyline(lat, lng, routeCoords);
 
     if (minDist > OFFROUTE_DIST) {
-        box.className = 'offroute';
+        // Fuori rotta: mostra banner rosso + traccia
+        banner.className = 'show offroute';
         document.getElementById('navArrow').style.transform = '';
-        document.getElementById('navText').textContent = 'FUORI ROTTA';
         document.getElementById('navDist').textContent = formatDist(minDist);
+        document.getElementById('navText').textContent  = 'FUORI ROTTA';
+
         offRoutePoints.push([lat,lng]);
         if (!offRouteLayer) {
             offRouteLayer = L.polyline(offRoutePoints, { color:'#f87171', weight:3, opacity:0.9, dashArray:'6,4' }).addTo(leafletMap);
@@ -386,7 +365,7 @@ function updateNavigation(lat, lng) {
     if (offRouteLayer) { offRouteLayer.remove(); offRouteLayer=null; }
     offRoutePoints = [];
 
-    if (currentStep >= navSteps.length) { box.className=''; clearNavBox(); return; }
+    if (currentStep >= navSteps.length) { banner.className=''; return; }
 
     const step = navSteps[currentStep];
     const dist = haversine(lat, lng, step.maneuver.location[1], step.maneuver.location[0]);
@@ -394,28 +373,21 @@ function updateNavigation(lat, lng) {
 
     if (dist <= getApproachDist(gpsSpeed)) {
         const next = navSteps[currentStep];
-        box.className = 'active';
+        banner.className = 'show';
         document.getElementById('navArrow').style.transform = `rotate(${maneuverDeg(next.maneuver.type, next.maneuver.modifier)}deg)`;
-        document.getElementById('navText').textContent = next.name || formatManeuver(next.maneuver.type, next.maneuver.modifier);
         document.getElementById('navDist').textContent = formatDist(dist);
+        document.getElementById('navText').textContent = next.name || formatManeuver(next.maneuver.type, next.maneuver.modifier);
     } else {
-        box.className = '';
-        clearNavBox();
+        banner.className = '';
     }
 }
 
-function clearNavBox() {
-    document.getElementById('navText').textContent = '';
-    document.getElementById('navDist').textContent = '';
-    document.getElementById('navArrow').style.transform = '';
-}
-
+// ── Geometry ──
 function haversine(lat1,lng1,lat2,lng2) {
     const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
     const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
     return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
-
 function distToPolyline(lat,lng,coords) {
     if (!coords.length) return Infinity;
     let minD=Infinity;
@@ -425,14 +397,12 @@ function distToPolyline(lat,lng,coords) {
     }
     return minD;
 }
-
 function distToSegment(plat,plng,alat,alng,blat,blng) {
     const dx=blat-alat,dy=blng-alng;
     if (dx===0&&dy===0) return haversine(plat,plng,alat,alng);
     const t=Math.max(0,Math.min(1,((plat-alat)*dx+(plng-alng)*dy)/(dx*dx+dy*dy)));
     return haversine(plat,plng,alat+t*dx,alng+t*dy);
 }
-
 function maneuverDeg(type,mod) {
     if (type==='arrive'||type==='depart') return 0;
     if (type==='roundabout'||type==='rotary') return 45;
@@ -440,7 +410,6 @@ function maneuverDeg(type,mod) {
              'uturn':180,'sharp left':225,'left':270,'slight left':330};
     return m[mod]!==undefined ? m[mod] : 0;
 }
-
 function formatManeuver(type,mod) {
     if (type==='arrive') return 'Arrivo';
     if (type==='depart') return 'Partenza';
@@ -450,11 +419,9 @@ function formatManeuver(type,mod) {
              'straight':'Dritto','uturn':'Inversione'};
     return l[mod]||'Continua';
 }
-
 function formatDist(m) {
     return m>=1000?(m/1000).toFixed(1)+' km':Math.round(m)+' m';
 }
-
 function updateMapOverlay() {
     document.getElementById('mapGear').textContent = data.gear;
     document.getElementById('mapRpm').textContent  = Math.round(data.rpm);
@@ -463,14 +430,12 @@ function updateMapOverlay() {
 }
 
 // ═══════════════════════════════════════════════
-//  CANVAS – DASHBOARD
+//  DASHBOARD
 // ═══════════════════════════════════════════════
-const SEGS={
-    '0':[1,1,1,1,1,1,0],'1':[0,1,1,0,0,0,0],'2':[1,1,0,1,1,0,1],
+const SEGS={'0':[1,1,1,1,1,1,0],'1':[0,1,1,0,0,0,0],'2':[1,1,0,1,1,0,1],
     '3':[1,1,1,1,0,0,1],'4':[0,1,1,0,0,1,1],'5':[1,0,1,1,0,1,1],
     '6':[1,0,1,1,1,1,1],'7':[1,1,1,0,0,0,0],'8':[1,1,1,1,1,1,1],
-    '9':[1,1,1,1,0,1,1],' ':[0,0,0,0,0,0,0],'-':[0,0,0,0,0,0,1]
-};
+    '9':[1,1,1,1,0,1,1],' ':[0,0,0,0,0,0,0],'-':[0,0,0,0,0,0,1]};
 function fp(pts){ctx.beginPath();ctx.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)ctx.lineTo(pts[i],pts[i+1]);ctx.closePath();ctx.fill();}
 function dd(x,y,w,h,ch,sw,col){
     const seg=SEGS[ch]||SEGS[' '],p=sw*0.45;ctx.fillStyle=col||'#111';
@@ -495,12 +460,9 @@ function tw(str,dw,sw,gap){let w=0;for(let i=0;i<str.length;i++)w+=str[i]==='.'?
 function lb(txt,x,y,sz,col,sp){ctx.fillStyle=col||'#999';ctx.font=`600 ${sz||9}px Arial`;ctx.letterSpacing=(sp||'2')+'px';ctx.fillText(txt,x,y);}
 
 function draw() {
-    const BG  =theme==='dark'?'#000':'#fff';
-    const LINE=theme==='dark'?'#222':'#eee';
-    const DIG =theme==='dark'?'#fff':'#111';
-    const LBL =theme==='dark'?'#555':'#999';
-    const UNIT=theme==='dark'?'#444':'#777';
-
+    const BG=theme==='dark'?'#000':'#fff',LINE=theme==='dark'?'#222':'#eee',
+          DIG=theme==='dark'?'#fff':'#111',LBL=theme==='dark'?'#555':'#999',
+          UNIT=theme==='dark'?'#444':'#777';
     document.querySelector('.frame').style.background=BG;
     ctx.fillStyle=BG;ctx.fillRect(0,0,W,H);
     const SP=H*0.60,HL=W*0.5;
@@ -508,16 +470,13 @@ function draw() {
     ctx.fillRect(0,SP,W,0.5);ctx.fillRect(HL,0,0.5,SP);
     for(let i=1;i<4;i++)ctx.fillRect(W*i/5,SP,0.5,H-SP);
     ctx.fillRect(W*4/5,SP,0.5,H-SP);
-
     const DWB=58,DHB=106,SWB=11,GB=10;
     const rs=String(Math.round(data.rpm)),rw=tw(rs,DWB,SWB,GB),rx=(HL-rw)/2,ry=(SP-DHB)/2;
     dn(rs,rx,ry,DWB,DHB,SWB,GB,DIG);lb('RPM',rx,ry-8,11,LBL,'4');
-
     const ss=String(Math.round(data.spd)),sw2=tw(ss,DWB,SWB,GB),sx=HL+(HL-sw2)/2-24,sy=ry;
     dn(ss,sx,sy,DWB,DHB,SWB,GB,DIG);
     ctx.fillStyle=UNIT;ctx.font='400 11px Arial';ctx.letterSpacing='0px';ctx.fillText('km/h',sx+sw2+12,sy+DHB);
     lb('SPEED',sx,sy-8,11,LBL,'4');
-
     const DWK=12,DHK=22,SWK=2.6,GK=2,ty=sy+DHB+18;
     ctx.fillStyle=LINE;ctx.fillRect(HL+8,ty-6,HL-16,0.5);
     const ts=Number(data.tot).toFixed(1),tw2=tw(ts,DWK,SWK,GK),tx=HL+12;
@@ -529,21 +488,15 @@ function draw() {
     ctx.fillStyle=UNIT;ctx.font='400 9px Arial';ctx.letterSpacing='0px';ctx.fillText('km',trx+trw+4,ty+DHK-1);
     lb('TRIP',trx,ty-4,7,LBL,'1.5');
     ctx.fillStyle=LINE;ctx.fillRect(HL+HL/2-2,ty,0.5,DHK+10);
-
     const DWS=19,DHS=40,SWS=4,GS=3,BY=SP+(H-SP-DHS)/2;
-    const params=[
-        {l:'IAT',v:Number(data.iat).toFixed(1),u:'°C'},
-        {l:'CLT',v:Number(data.clt).toFixed(1),u:'°C'},
-        {l:'LMD',v:String(Math.round(data.lmd)),u:'mV'},
-        {l:'BAT',v:Number(data.bat).toFixed(2),u:'V'}
-    ];
-    params.forEach(({l,v,u},c)=>{
+    [{l:'IAT',v:Number(data.iat).toFixed(1),u:'°C'},{l:'CLT',v:Number(data.clt).toFixed(1),u:'°C'},
+     {l:'LMD',v:String(Math.round(data.lmd)),u:'mV'},{l:'BAT',v:Number(data.bat).toFixed(2),u:'V'}
+    ].forEach(({l,v,u},c)=>{
         const cw=W/5,cx=c*cw,vw=tw(v,DWS,SWS,GS),bx=cx+(cw-vw)/2-8;
         dn(v,bx,BY,DWS,DHS,SWS,GS,DIG);
         ctx.fillStyle=UNIT;ctx.font='400 11px Arial';ctx.letterSpacing='0px';ctx.fillText(u,bx+vw+5,BY+DHS);
         ctx.fillStyle=LBL;ctx.font='600 9px Arial';ctx.letterSpacing='2px';ctx.fillText(l,bx,BY-9);
     });
-
     const DWG=32,DHG=54,SWG=7,gcx=W*4/5,gcw=W/5;
     const gs=String(data.gear),gw=tw(gs,DWG,SWG,0),gx=gcx+(gcw-gw)/2,gy=SP+(H-SP-DHG)/2;
     dn(gs,gx,gy,DWG,DHG,SWG,0,DIG);
@@ -551,13 +504,11 @@ function draw() {
 }
 
 function resizeAndDraw() {
-    requestAnimationFrame(() => {
-        const w=document.documentElement.clientWidth;
-        const h=document.documentElement.clientHeight;
+    requestAnimationFrame(()=>{
+        const w=document.documentElement.clientWidth,h=document.documentElement.clientHeight;
         canvas.style.width=w+'px';canvas.style.height=h+'px';
         canvas.width=w*devicePixelRatio;canvas.height=h*devicePixelRatio;
-        ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
-        draw();
+        ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);draw();
     });
 }
 window.addEventListener('resize',resizeAndDraw);
@@ -569,13 +520,13 @@ window.addEventListener('orientationchange',()=>{setTimeout(resizeAndDraw,100);s
 async function setupConnection(device) {
     bleDevice=device;st.textContent='CONNECTING...';st.className='';
     if(retryTimer){clearTimeout(retryTimer);retryTimer=null;}
-    try {
-        const server =await device.gatt.connect();
+    try{
+        const server=await device.gatt.connect();
         const service=await server.getPrimaryService(SERVICE_UUID);
-        const charct =await service.getCharacteristic(CHARACTERISTIC_UUID);
+        const charct=await service.getCharacteristic(CHARACTERISTIC_UUID);
         const readData=async()=>{
             try{
-                const value =await charct.readValue();
+                const value=await charct.readValue();
                 const parsed=JSON.parse(new TextDecoder().decode(value));
                 if(parsed.page!==undefined&&parsed.page!==currentPage)switchPage(parsed.page);
                 Object.assign(data,parsed);
@@ -594,69 +545,47 @@ async function setupConnection(device) {
         st.textContent='LIVE';st.className='ok';
     }catch(e){st.textContent='ERROR';st.className='err';scheduleRetry(device);}
 }
-
-function scheduleRetry(device) {
+function scheduleRetry(device){
     if(retryTimer)clearTimeout(retryTimer);
     if(retryCount>=20){retryCount=0;st.textContent='TAP TO CONNECT';st.className='err';bleDevice=null;return;}
-    retryCount++;
-    retryTimer=setTimeout(()=>setupConnection(device),2000);
+    retryCount++;retryTimer=setTimeout(()=>setupConnection(device),2000);
 }
-
-async function connectBLE() {
+async function connectBLE(){
     if(!navigator.bluetooth){st.textContent='BT NOT SUPPORTED';st.className='err';return;}
     try{
         st.textContent='SCANNING...';st.className='';
         let device=await tryKnownDevice();
-        if(!device){
-            device=await navigator.bluetooth.requestDevice({
-                filters:[{name:DEVICE_NAME}],optionalServices:[SERVICE_UUID]
-            });
-        }
+        if(!device)device=await navigator.bluetooth.requestDevice({filters:[{name:DEVICE_NAME}],optionalServices:[SERVICE_UUID]});
         retryCount=0;await setupConnection(device);
     }catch(e){st.textContent='TAP TO CONNECT';st.className='err';}
 }
-
-async function tryKnownDevice() {
+async function tryKnownDevice(){
     if(!navigator.bluetooth.getDevices)return null;
-    try{const devices=await navigator.bluetooth.getDevices();return devices.find(d=>d.name===DEVICE_NAME)||null;}
+    try{const d=await navigator.bluetooth.getDevices();return d.find(x=>x.name===DEVICE_NAME)||null;}
     catch(e){return null;}
 }
 
-// ═══════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════
 window.addEventListener('load',async()=>{
     const tBtn=document.getElementById('btnTheme');
     tBtn.textContent=theme==='dark'?'☾ DARK':'☀ LIGHT';
     tBtn.classList.toggle('active',theme==='dark');
-
     resizeAndDraw();
-    setTimeout(resizeAndDraw,100);
-    setTimeout(resizeAndDraw,300);
-    setTimeout(resizeAndDraw,800);
-
+    setTimeout(resizeAndDraw,100);setTimeout(resizeAndDraw,300);setTimeout(resizeAndDraw,800);
     const device=await tryKnownDevice();
     if(device){st.textContent='AUTO CONNECT...';retryCount=0;await setupConnection(device);}
 });
 
 canvas.addEventListener('click',()=>{if(!bleDevice?.gatt?.connected)connectBLE();});
-
 document.getElementById('btnTheme').addEventListener('click',()=>{
-    theme=theme==='light'?'dark':'light';
-    localStorage.setItem('dashTheme',theme);
+    theme=theme==='light'?'dark':'light';localStorage.setItem('dashTheme',theme);
     const btn=document.getElementById('btnTheme');
     btn.textContent=theme==='dark'?'☾ DARK':'☀ LIGHT';
     btn.classList.toggle('active',theme==='dark');
     if(currentPage===0)draw();
 });
+document.getElementById('btnNext').addEventListener('click',()=>switchPage((currentPage+1)%NUM_PAGES));
 
-document.getElementById('btnNext').addEventListener('click',()=>{
-    switchPage((currentPage+1)%NUM_PAGES);
-});
-
-if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-}
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body>
 </html>
