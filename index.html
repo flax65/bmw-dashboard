@@ -312,6 +312,70 @@ let lastKnownHeading = 0;  // ultimo heading valido (>= 5 km/h)
 
 let markerIcon = null;
 
+function startGPS() {
+    if (!('geolocation' in navigator)) return;
+    if (watchId !== null) return;
+    watchId = navigator.geolocation.watchPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        gpsSpeed = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
+        gpsHeading = pos.coords.heading || 0;
+        // Aggiorna heading solo sopra i 5 km/h, congela sotto i 4 km/h
+        if (gpsSpeed >= 5 && pos.coords.heading !== null) {
+            lastKnownHeading = gpsHeading;
+        }
+
+        // Update speed display
+        const spdEl = document.getElementById('mapSpd');
+        if (spdEl) spdEl.textContent = Math.round(gpsSpeed);
+        // Aggiorna anche la dashboard se attiva
+        if (currentPage === 0) draw();
+
+        // Le operazioni mappa solo se la mappa esiste
+        if (!leafletMap) return;
+
+        // Marker
+        if (!mapMarker) {
+            mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(leafletMap);
+        } else {
+            mapMarker.setLatLng([lat, lng]);
+        }
+        // Ruota la freccia nel senso di marcia (usa lastKnownHeading)
+        if (mapMarker) {
+            const el = mapMarker.getElement();
+            if (el) {
+                const svg = el.querySelector('svg');
+                if (svg) svg.style.transform = `rotate(${lastKnownHeading}deg)`;
+            }
+        }
+
+        // Heading-up: rotate map with scale to fill screen
+        if (headingUp) {
+            leafletMap.getContainer().style.transform = `rotate(${-lastKnownHeading}deg) scale(1.5)`;
+            leafletMap.getContainer().style.transformOrigin = '50% 50%';
+        } else {
+            leafletMap.getContainer().style.transform = '';
+        }
+
+        // Auto-zoom by speed
+        if (autoZoom) {
+            let z = 19;
+            if      (gpsSpeed > 130) z = 14;
+            else if (gpsSpeed > 90)  z = 16;
+            else if (gpsSpeed > 50)  z = 17;
+            else if (gpsSpeed > 10)  z = 18;
+            if (leafletMap.getZoom() !== z)
+                leafletMap.setZoom(z, { animate: true });
+        }
+
+        leafletMap.panTo([lat, lng], { animate: true, duration: 0.5 });
+
+        // Navigation: find next step
+        updateNavigation(lat, lng);
+
+    }, null, { enableHighAccuracy: true, maximumAge: 1000 });
+}
+
 function initMap() {
     if (leafletMap) { leafletMap.invalidateSize(); return; }
 
@@ -348,62 +412,7 @@ function initMap() {
         }, 10000);
     });
 
-    // Watch GPS
-    if ('geolocation' in navigator) {
-        watchId = navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            gpsSpeed = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
-            gpsHeading = pos.coords.heading || 0;
-            // Aggiorna heading solo sopra i 5 km/h, congela sotto i 4 km/h
-            if (gpsSpeed >= 5 && pos.coords.heading !== null) {
-                lastKnownHeading = gpsHeading;
-            }
-
-            // Update speed display (GPS)
-            document.getElementById('mapSpd').textContent = Math.round(gpsSpeed);
-
-            // Marker
-            if (!mapMarker) {
-                mapMarker = L.marker([lat, lng], { icon: markerIcon }).addTo(leafletMap);
-            } else {
-                mapMarker.setLatLng([lat, lng]);
-            }
-            // Ruota la freccia nel senso di marcia (usa lastKnownHeading)
-            if (mapMarker) {
-                const el = mapMarker.getElement();
-                if (el) {
-                    const svg = el.querySelector('svg');
-                    if (svg) svg.style.transform = `rotate(${lastKnownHeading}deg)`;
-                }
-            }
-
-            // Heading-up: rotate map with scale to fill screen
-            if (headingUp) {
-                leafletMap.getContainer().style.transform = `rotate(${-lastKnownHeading}deg) scale(1.5)`;
-                leafletMap.getContainer().style.transformOrigin = '50% 50%';
-            } else {
-                leafletMap.getContainer().style.transform = '';
-            }
-
-            // Auto-zoom by speed
-            if (autoZoom) {
-                let z = 19;
-                if      (gpsSpeed > 130) z = 14;
-                else if (gpsSpeed > 90)  z = 16;
-                else if (gpsSpeed > 50)  z = 17;
-                else if (gpsSpeed > 10)  z = 18;
-                if (leafletMap.getZoom() !== z)
-                    leafletMap.setZoom(z, { animate: true });
-            }
-
-            leafletMap.panTo([lat, lng], { animate: true, duration: 0.5 });
-
-            // Navigation: find next step
-            updateNavigation(lat, lng);
-
-        }, null, { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 });
-    }
+    // GPS già avviato globalmente da startGPS()
 
     // Load route from GitHub if available
     loadRoute();
@@ -804,6 +813,9 @@ window.addEventListener('load', async () => {
     setTimeout(resizeAndDraw, 100);
     setTimeout(resizeAndDraw, 300);
     setTimeout(resizeAndDraw, 800);
+
+    // Avvia il GPS subito (per velocità su dashboard)
+    startGPS();
 
     const device = await tryKnownDevice();
     if (device) {
